@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  # Node.js application service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: nodejs-starter-app
+    restart: unless-stopped
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=development
+      - MONGO_URI=mongodb://mongo:27017/nodejs-starter
+      - PORT=4000
+    depends_on:
+      - mongo
+    networks:
+      - app-network
+
+  # MongoDB service
+  mongo:
+    image: mongo:latest
+    container_name: nodejs-starter-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
+    driver: local

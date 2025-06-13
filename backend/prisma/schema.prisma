@@ -1,0 +1,47 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model based on the existing Mongoose schema
+model User {
+  id                      String    @id @default(uuid())
+  name                    String
+  email                   String    @unique
+  password                String
+  role                    Role      @default(USER)
+  bio                     String?   // Optional field
+  avatar                  String?   // Optional field
+  isEmailVerified         Boolean   @default(false)
+  emailVerificationToken  String?   // Optional field
+  emailVerificationExpires DateTime? // Optional field
+  passwordChangedAt       DateTime? // Optional field
+  passwordResetToken      String?   // Optional field
+  passwordResetExpires    DateTime? // Optional field
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  // Relationships can be added here when other models are created
+  // For example: posts Post[] if you add a Post model later
+
+  @@map("users") // Maps to "users" table in PostgreSQL
+}
+
+// Enum for user roles
+enum Role {
+  USER
+  ADMIN
+}
+
+// Note: Additional models can be added here as needed for the application
+// For example, if you need to store AI-related data or other entities

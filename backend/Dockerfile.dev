@@ -1,0 +1,20 @@
+# Use Node.js 18 as base image for development
+FROM node:18
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies including devDependencies
+RUN npm install
+
+# Copy application code
+COPY . .
+
+# Expose the application port
+EXPOSE 4000
+
+# Start the application in development mode
+CMD ["npm", "run", "dev"]
