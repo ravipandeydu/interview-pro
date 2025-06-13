@@ -10,6 +10,11 @@ import { createController } from 'awilix-express';
 import authRoutes from './auth.routes.js';
 import userRoutes from './user.routes.js';
 import aiRoutes from './ai.routes.js';
+import candidateRoutes from './candidate.routes.js';
+import notificationRoutes from './notification.routes.js';
+import interviewRoutes from './interview.routes.js';
+import questionRoutes from './question.routes.js';
+import responseRoutes from './response.routes.js';
 
 const router = express.Router();
 
@@ -150,11 +155,124 @@ const router = express.Router();
  *         message:
  *           type: string
  *           example: Something went wrong
+ *     CandidateInput:
+ *       type: object
+ *       required:
+ *         - fullName
+ *         - email
+ *       properties:
+ *         fullName:
+ *           type: string
+ *           example: John Smith
+ *         email:
+ *           type: string
+ *           format: email
+ *           example: john.smith@example.com
+ *         phone:
+ *           type: string
+ *           example: +1234567890
+ *         resumeUrl:
+ *           type: string
+ *           example: https://example.com/resume.pdf
+ *         linkedInUrl:
+ *           type: string
+ *           example: https://linkedin.com/in/johnsmith
+ *         githubUrl:
+ *           type: string
+ *           example: https://github.com/johnsmith
+ *         portfolioUrl:
+ *           type: string
+ *           example: https://johnsmith.dev
+ *         skills:
+ *           type: array
+ *           items:
+ *             type: string
+ *           example: ["JavaScript", "React", "Node.js"]
+ *         experienceYears:
+ *           type: integer
+ *           example: 5
+ *         currentPosition:
+ *           type: string
+ *           example: Senior Developer
+ *         currentCompany:
+ *           type: string
+ *           example: Tech Corp
+ *         educationLevel:
+ *           type: string
+ *           example: Bachelor's Degree
+ *         educationField:
+ *           type: string
+ *           example: Computer Science
+ *         notes:
+ *           type: string
+ *           example: Strong backend skills, interested in AI
+ *         status:
+ *           type: string
+ *           enum: [NEW, CONTACTED, INTERVIEW_SCHEDULED, IN_PROCESS, OFFER_SENT, HIRED, REJECTED, ON_HOLD]
+ *           default: NEW
+ *           example: NEW
+ *     CandidateUpdateInput:
+ *       type: object
+ *       properties:
+ *         fullName:
+ *           type: string
+ *           example: John Smith
+ *         email:
+ *           type: string
+ *           format: email
+ *           example: john.smith@example.com
+ *         phone:
+ *           type: string
+ *           example: +1234567890
+ *         resumeUrl:
+ *           type: string
+ *           example: https://example.com/resume.pdf
+ *         linkedInUrl:
+ *           type: string
+ *           example: https://linkedin.com/in/johnsmith
+ *         githubUrl:
+ *           type: string
+ *           example: https://github.com/johnsmith
+ *         portfolioUrl:
+ *           type: string
+ *           example: https://johnsmith.dev
+ *         skills:
+ *           type: array
+ *           items:
+ *             type: string
+ *           example: ["JavaScript", "React", "Node.js"]
+ *         experienceYears:
+ *           type: integer
+ *           example: 5
+ *         currentPosition:
+ *           type: string
+ *           example: Senior Developer
+ *         currentCompany:
+ *           type: string
+ *           example: Tech Corp
+ *         educationLevel:
+ *           type: string
+ *           example: Bachelor's Degree
+ *         educationField:
+ *           type: string
+ *           example: Computer Science
+ *         notes:
+ *           type: string
+ *           example: Strong backend skills, interested in AI
+ *         status:
+ *           type: string
+ *           enum: [NEW, CONTACTED, INTERVIEW_SCHEDULED, IN_PROCESS, OFFER_SENT, HIRED, REJECTED, ON_HOLD]
+ *           example: CONTACTED
  */
 
 // Mount routes
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/ai', aiRoutes);
+router.use('/candidates', candidateRoutes);
+router.use('/notifications', notificationRoutes);
+router.use('/interviews', interviewRoutes);
+router.use('/questions', questionRoutes);
+router.use('/responses', responseRoutes);
 
 export default router;

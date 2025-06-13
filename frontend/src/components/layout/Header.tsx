@@ -7,6 +7,7 @@ import { Moon, Sun, User, LogOut, Settings } from "lucide-react";
 import { Button } from "../ui/button";
 import { useStore } from "../../store/useStore";
 import { useAuth } from "../../hooks/useAuth";
+import NotificationDropdown from "../notifications/NotificationDropdown";
 
 export function Header() {
   const { theme, setTheme } = useTheme();
@@ -110,6 +111,7 @@ export function Header() {
 
             {enableAuth && isAuthenticated && (
               <>
+                <NotificationDropdown />
                 <Button variant="ghost" size="icon" asChild>
                   <Link href="/settings">
                     <Settings className="h-[1.2rem] w-[1.2rem]" />
