@@ -2,9 +2,7 @@
  * Express App Setup
  *
  * This file configures the Express application with middleware, routes, and error handling.
- *
- * @author Auto-generated
- * @date ${new Date().toISOString().split('T')[0]}
+ * Enhanced with dependency injection using Awilix.
  */
 
 import express from 'express';
@@ -14,19 +12,31 @@ import mongoSanitize from 'express-mongo-sanitize';
 import rateLimit from 'express-rate-limit';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
+import passport from 'passport';
+import { scopePerRequest } from 'awilix-express';
+import container from './container.js';
 
 import config from './config/index.js';
 import logger from './utils/logger.js';
 import { errorHandler, notFoundHandler } from './middlewares/error.middleware.js';
 import requestLogger from './middlewares/request-logger.middleware.js';
+import { configureJwtStrategy } from './middlewares/auth.middleware.js';
 
 // Import routes
 import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
 import aiRoutes from './routes/ai.routes.js';
+import routes from './routes/index.js';
 
 // Initialize Express app
 const app = express();
+
+// Configure dependency injection container
+app.use(scopePerRequest(container));
+
+// Initialize Passport and configure JWT strategy
+app.use(passport.initialize());
+configureJwtStrategy();
 
 // Security headers
 app.use(helmet());
@@ -78,10 +88,12 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API routes
-app.use('/api/auth', authLimiter, authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/ai', aiRoutes);
+// API routes with dependency injection
+app.use('/api/v1', routes);
+
+// Apply rate limiter to auth routes
+app.use('/api/auth', authLimiter);
+app.use('/api/v1/auth', authLimiter);
 
 // Swagger documentation
 const swaggerOptions = {

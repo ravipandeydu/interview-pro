@@ -2,12 +2,11 @@
  * API Routes Index
  * 
  * This module consolidates all API routes and exports them as a single router.
- * 
- * @author Auto-generated
- * @date ${new Date().toISOString().split('T')[0]}
+ * Enhanced with dependency injection support.
  */
 
 import express from 'express';
+import { createController } from 'awilix-express';
 import authRoutes from './auth.routes.js';
 import userRoutes from './user.routes.js';
 import aiRoutes from './ai.routes.js';

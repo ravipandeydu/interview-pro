@@ -15,7 +15,7 @@ export class AuthService {
   static async login(credentials: LoginFormData): Promise<SessionResponse> {
     try {
       const { data } = await api.post<SessionResponse>(
-        "/api/auth/login",
+        "/api/v1/auth/login",
         credentials
       );
       // Store the token in localStorage
