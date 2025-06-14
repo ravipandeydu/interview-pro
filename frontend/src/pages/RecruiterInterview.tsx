@@ -33,6 +33,7 @@ import { toast } from 'sonner';
 import { VideoChat } from '@/components/VideoChat';
 import { format } from 'date-fns';
 import { CodeEditor } from '@/components/CodeEditor';
+import { InterviewNotes } from '@/components/interviews/InterviewNotes';
 
 interface RecruiterInterviewProps {
   interviewId: string;
@@ -169,6 +170,7 @@ export const RecruiterInterview = ({ interviewId }: RecruiterInterviewProps) => 
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="questions">Questions</TabsTrigger>
                   <TabsTrigger value="submissions">Submissions</TabsTrigger>
+                  <TabsTrigger value="notes">Notes</TabsTrigger>
                 </TabsList>
             </CardHeader>
             <CardContent>
@@ -269,6 +271,10 @@ export const RecruiterInterview = ({ interviewId }: RecruiterInterviewProps) => 
                     <p className="text-muted-foreground">No submissions yet</p>
                   </div>
                 )}
+              </TabsContent>
+              
+              <TabsContent value="notes" className="space-y-4">
+                <InterviewNotes interviewId={interviewId} />
               </TabsContent>
             </CardContent>
               </Tabs>

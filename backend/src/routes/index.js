@@ -16,6 +16,7 @@ import interviewRoutes from './interview.routes.js';
 import questionRoutes from './question.routes.js';
 import responseRoutes from './response.routes.js';
 import candidateAccessRoutes from './candidate-access.routes.js';
+import noteRoutes from './note.routes.js';
 
 const router = express.Router();
 
@@ -276,5 +277,6 @@ router.use('/interviews', interviewRoutes);
 router.use('/questions', questionRoutes);
 router.use('/responses', responseRoutes);
 router.use('/candidate-access', candidateAccessRoutes);
+router.use('/notes', noteRoutes);
 
 export default router;

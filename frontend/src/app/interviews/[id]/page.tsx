@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Calendar, Clock, User, FileText, Edit, Trash2, Share2, Copy, Plus, X } from 'lucide-react';
 import { QuestionSelector } from '@/components/questions/QuestionSelector';
+import { InterviewNotes } from '@/components/interviews/InterviewNotes';
 import { format } from 'date-fns';
 import SendInvitationDialog from '@/components/interviews/SendInvitationDialog';
 
@@ -238,6 +239,7 @@ export default function InterviewDetailsPage() {
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="questions">Questions</TabsTrigger>
             <TabsTrigger value="submissions">Submissions</TabsTrigger>
+            <TabsTrigger value="notes">Notes</TabsTrigger>
           </TabsList>
           
           <TabsContent value="details" className="mt-6">
@@ -385,6 +387,10 @@ export default function InterviewDetailsPage() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+          
+          <TabsContent value="notes" className="mt-6">
+            <InterviewNotes interviewId={id as string} />
           </TabsContent>
         </Tabs>
         

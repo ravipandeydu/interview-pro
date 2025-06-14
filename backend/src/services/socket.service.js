@@ -13,6 +13,7 @@ import { Server } from 'socket.io';
 import logger from '../utils/logger.js';
 import config from '../config/index.js';
 import jwt from 'jsonwebtoken';
+import noteService from './note.service.js';
 
 let io;
 
@@ -21,6 +22,9 @@ const connectedUsers = new Map();
 
 // Store active video rooms
 const activeRooms = new Map();
+
+// Store active note editing sessions
+const activeNoteEditors = new Map();
 
 /**
  * Initialize Socket.IO server
@@ -113,6 +117,9 @@ function handleConnection(socket) {
   // Handle WebRTC events
   setupWebRTCEvents(socket);
 
+  // Handle note events
+  setupNoteEvents(socket);
+
   // Handle disconnect
   socket.on('disconnect', () => {
     logger.info(`User disconnected: ${userId}`);
@@ -128,6 +135,9 @@ function handleConnection(socket) {
     
     // Handle WebRTC cleanup
     cleanupUserRooms(socket);
+
+    // Handle note editing cleanup
+    cleanupNoteEditing(socket);
   });
 }
 
@@ -335,12 +345,53 @@ function leaveWebRTCRoom(socket, roomName) {
  * @param {Object} socket - Socket instance
  */
 function cleanupUserRooms(socket) {
-  // Find all rooms this socket is in
-  activeRooms.forEach((users, roomName) => {
+  // Find all WebRTC rooms the user is in
+  for (const [roomName, users] of activeRooms.entries()) {
     if (users.has(socket.id)) {
       leaveWebRTCRoom(socket, roomName);
     }
+  }
+}
+
+/**
+ * Clean up user's note editing sessions on disconnect
+ * @param {Object} socket - Socket instance
+ */
+function cleanupNoteEditing(socket) {
+  // Find all note rooms the user is in
+  for (const [roomName, users] of activeNoteEditors.entries()) {
+    if (users.has(socket.id)) {
+      leaveNoteRoom(socket, roomName);
+    }
+  }
+}
+
+/**
+ * Leave a note editing room and clean up resources
+ * @param {Object} socket - Socket instance
+ * @param {string} roomName - Room name
+ */
+function leaveNoteRoom(socket, roomName) {
+  // Remove from active note editors tracking
+  if (activeNoteEditors.has(roomName)) {
+    activeNoteEditors.get(roomName).delete(socket.id);
+    if (activeNoteEditors.get(roomName).size === 0) {
+      activeNoteEditors.delete(roomName);
+    }
+  }
+  
+  // Leave the room
+  socket.leave(roomName);
+  
+  // Notify others that user left
+  socket.to(roomName).emit('note:userLeft', {
+    userId: socket.user.id,
+    name: socket.user.name,
+    timestamp: new Date().toISOString()
   });
+  
+  const noteId = roomName.split(':')[1];
+  logger.info(`User ${socket.user.id} left note editing room: ${noteId}`);
 }
 
 /**
@@ -408,6 +459,129 @@ export function isUserOnline(userId) {
  */
 export function getOnlineUsersCount() {
   return connectedUsers.size;
+}
+
+export function getIO() {
+  if (!io) {
+    throw new Error('Socket.IO not initialized');
+  }
+  return io;
+}
+
+/**
+ * Setup note-related socket events for collaborative editing
+ * @param {Object} socket - Socket instance
+ */
+function setupNoteEvents(socket) {
+  // Join a note editing session
+  socket.on('note:join', async (noteId) => {
+    try {
+      const roomName = `note:${noteId}`;
+      socket.join(roomName);
+      
+      // Keep track of users editing this note
+      if (!activeNoteEditors.has(roomName)) {
+        activeNoteEditors.set(roomName, new Set());
+      }
+      activeNoteEditors.get(roomName).add(socket.id);
+      
+      // Get the current note content
+      const note = await noteService.getNoteById(noteId);
+      
+      // Send the current note content to the joining user
+      socket.emit('note:current', {
+        id: note.id,
+        title: note.title,
+        content: note.content,
+        lastUpdated: note.updatedAt,
+        editors: Array.from(activeNoteEditors.get(roomName)).length
+      });
+      
+      // Notify others that a new user joined the editing session
+      socket.to(roomName).emit('note:userJoined', {
+        userId: socket.user.id,
+        name: socket.user.name,
+        role: socket.user.role,
+        timestamp: new Date().toISOString()
+      });
+      
+      logger.info(`User ${socket.user.id} joined note editing room: ${noteId}`);
+    } catch (error) {
+      logger.error(`Error in note:join: ${error.message}`);
+      socket.emit('error', { message: 'Failed to join note editing session' });
+    }
+  });
+  
+  // Leave a note editing session
+  socket.on('note:leave', (noteId) => {
+    const roomName = `note:${noteId}`;
+    leaveNoteRoom(socket, roomName);
+  });
+  
+  // Update note content (collaborative editing)
+  socket.on('note:update', async (data) => {
+    try {
+      const { noteId, content, title } = data;
+      const roomName = `note:${noteId}`;
+      
+      // Broadcast the update to all users in the room except the sender
+      socket.to(roomName).emit('note:contentUpdate', {
+        content,
+        title,
+        updatedBy: {
+          id: socket.user.id,
+          name: socket.user.name
+        },
+        timestamp: new Date().toISOString()
+      });
+      
+      // We don't save every update to the database to avoid excessive writes
+      // Instead, we'll save periodically or when users leave
+      logger.debug(`Note ${noteId} content updated by ${socket.user.id}`);
+    } catch (error) {
+      logger.error(`Error in note:update: ${error.message}`);
+      socket.emit('error', { message: 'Failed to update note content' });
+    }
+  });
+  
+  // Save note content to database
+  socket.on('note:save', async (data) => {
+    try {
+      const { noteId, content, title } = data;
+      const roomName = `note:${noteId}`;
+      
+      // Save to database
+      await noteService.updateNote(noteId, { content, title }, socket.user.id);
+      
+      // Notify all users in the room that the note was saved
+      io.to(roomName).emit('note:saved', {
+        savedBy: {
+          id: socket.user.id,
+          name: socket.user.name
+        },
+        timestamp: new Date().toISOString()
+      });
+      
+      logger.info(`Note ${noteId} saved by ${socket.user.id}`);
+    } catch (error) {
+      logger.error(`Error in note:save: ${error.message}`);
+      socket.emit('error', { message: 'Failed to save note' });
+    }
+  });
+  
+  // Handle cursor position updates for collaborative editing
+  socket.on('note:cursorUpdate', (data) => {
+    const { noteId, position } = data;
+    const roomName = `note:${noteId}`;
+    
+    // Broadcast cursor position to other users in the room
+    socket.to(roomName).emit('note:cursorUpdate', {
+      userId: socket.user.id,
+      name: socket.user.name,
+      position,
+      timestamp: new Date().toISOString()
+    });
+  });
 }
 
 const socketService = {

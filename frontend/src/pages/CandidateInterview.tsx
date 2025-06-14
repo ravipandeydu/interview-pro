@@ -28,8 +28,10 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CodeEditor } from '@/components/CodeEditor';
 import { VideoChat } from '@/components/VideoChat';
+import { InterviewNotes } from '@/components/interviews/InterviewNotes';
 
 const QuestionCard = ({ children, className, ...props }: React.ComponentProps<typeof Card>) => (
   <Card className={`mb-6 shadow-md ${className}`} {...props}>
@@ -373,85 +375,98 @@ export const CandidateInterview = ({ token }: CandidateInterviewProps) => {
         {/* Main content - Questions */}
         <div className="lg:col-span-2">
           <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">{interview.title}</CardTitle>
-          <CardDescription>
-            Question {currentQuestionIndex + 1} of {interview.questions.length}
-            {timeRemaining && (
-              <span className="ml-4 font-medium">Time Remaining: {timeRemaining}</span>
-            )}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-6">
-            <Progress value={progress} className="h-2" />
-          </div>
-          
-          <QuestionCard>
-            <CardContent className="pt-6">
-              <h3 className="text-lg font-medium mb-4">{currentQuestion.question.content}</h3>
+            <CardHeader>
+              <CardTitle className="text-2xl">{interview.title}</CardTitle>
+              <CardDescription>
+                Question {currentQuestionIndex + 1} of {interview.questions.length}
+                {timeRemaining && (
+                  <span className="ml-4 font-medium">Time Remaining: {timeRemaining}</span>
+                )}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-6">
+                <Progress value={progress} className="h-2" />
+              </div>
               
-              {isCodingQuestion(currentQuestion) ? (
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-4">
-                    <label className="text-sm font-medium">Programming Language:</label>
-                    <Select
-                      value={selectedLanguage[currentQuestion.id] || 'javascript'}
-                      onValueChange={(value) => handleLanguageChange(currentQuestion.id, value)}
-                    >
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Select language" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="javascript">JavaScript</SelectItem>
-                        <SelectItem value="typescript">TypeScript</SelectItem>
-                        <SelectItem value="python">Python</SelectItem>
-                        <SelectItem value="java">Java</SelectItem>
-                        <SelectItem value="csharp">C#</SelectItem>
-                        <SelectItem value="cpp">C++</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <CodeEditor
-                    value={responses[currentQuestion.id] || ''}
-                    onChange={(value) => handleResponseChange(currentQuestion.id, value)}
-                    language={selectedLanguage[currentQuestion.id] || 'javascript'}
-                    height="300px"
-                    isCandidate={true}
-                  />
-                </div>
-              ) : (
-                <Textarea
-                  value={responses[currentQuestion.id] || ''}
-                  onChange={(e) => handleResponseChange(currentQuestion.id, e.target.value)}
-                  placeholder="Type your answer here..."
-                  className="w-full min-h-[150px]"
-                />
-              )}
+              <Tabs defaultValue="question">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="question">Question</TabsTrigger>
+                  <TabsTrigger value="notes">Notes</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="question">
+                  <QuestionCard>
+                    <CardContent className="pt-6">
+                      <h3 className="text-lg font-medium mb-4">{currentQuestion.question.content}</h3>
+                      
+                      {isCodingQuestion(currentQuestion) ? (
+                        <div className="space-y-4">
+                          <div className="flex items-center space-x-4">
+                            <label className="text-sm font-medium">Programming Language:</label>
+                            <Select
+                              value={selectedLanguage[currentQuestion.id] || 'javascript'}
+                              onValueChange={(value) => handleLanguageChange(currentQuestion.id, value)}
+                            >
+                              <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Select language" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="javascript">JavaScript</SelectItem>
+                                <SelectItem value="typescript">TypeScript</SelectItem>
+                                <SelectItem value="python">Python</SelectItem>
+                                <SelectItem value="java">Java</SelectItem>
+                                <SelectItem value="csharp">C#</SelectItem>
+                                <SelectItem value="cpp">C++</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <CodeEditor
+                            value={responses[currentQuestion.id] || ''}
+                            onChange={(value) => handleResponseChange(currentQuestion.id, value)}
+                            language={selectedLanguage[currentQuestion.id] || 'javascript'}
+                            height="300px"
+                            isCandidate={true}
+                          />
+                        </div>
+                      ) : (
+                        <Textarea
+                          value={responses[currentQuestion.id] || ''}
+                          onChange={(e) => handleResponseChange(currentQuestion.id, e.target.value)}
+                          placeholder="Type your answer here..."
+                          className="w-full min-h-[150px]"
+                        />
+                      )}
+                    </CardContent>
+                  </QuestionCard>
+                </TabsContent>
+                
+                <TabsContent value="notes">
+                  <InterviewNotes interviewId={interview?.id || ''} accessToken={token} />
+                </TabsContent>
+              </Tabs>
             </CardContent>
-          </QuestionCard>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button
-            variant="outline"
-            onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
-            disabled={currentQuestionIndex === 0}
-          >
-            Previous
-          </Button>
-          
-          {currentQuestionIndex < interview.questions.length - 1 ? (
-            <Button onClick={handleQuestionSubmit}>
-              Next
-            </Button>
-          ) : (
-            <Button onClick={() => setConfirmDialogOpen(true)}>
-              Complete Interview
-            </Button>
-          )}
-        </CardFooter>
-      </Card>
+            <CardFooter className="flex justify-between">
+              <Button
+                variant="outline"
+                onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
+                disabled={currentQuestionIndex === 0}
+              >
+                Previous
+              </Button>
+              
+              {currentQuestionIndex < interview.questions.length - 1 ? (
+                <Button onClick={handleQuestionSubmit}>
+                  Next
+                </Button>
+              ) : (
+                <Button onClick={() => setConfirmDialogOpen(true)}>
+                  Complete Interview
+                </Button>
+              )}
+            </CardFooter>
+          </Card>
         </div>
       </div>
       

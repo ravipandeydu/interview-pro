@@ -35,6 +35,8 @@ model User {
   interviews              Interview[] // Interviews created by this user (recruiter)
   questions               Question[]  // Questions created by this user
   candidateProfiles       CandidateProfile[] // Candidate profiles managed by this user
+  notes                   Note[]     // Notes created by this user
+  noteEdits               NoteEdit[] // Note edits made by this user
 
   @@map("users") // Maps to "users" table in PostgreSQL
 }
@@ -114,6 +116,7 @@ model Interview {
   recruiter         User      @relation(fields: [recruiterId], references: [id])
   questions         InterviewQuestion[]
   responses         Response[]
+  notes             Note[]    // Notes associated with this interview
   
   @@map("interviews")
 }
@@ -203,4 +206,38 @@ model Response {
   interviewQuestion InterviewQuestion @relation(fields: [interviewQuestionId], references: [id])
   
   @@map("responses")
+}
+
+// Note model for shared note-taking
+model Note {
+  id                String    @id @default(uuid())
+  title             String
+  content           String    // Rich text content in HTML format
+  isShared          Boolean   @default(true) // Whether the note is shared with others
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relationships
+  createdById       String
+  createdBy         User      @relation(fields: [createdById], references: [id])
+  interviewId       String
+  interview         Interview @relation(fields: [interviewId], references: [id])
+  edits             NoteEdit[] // History of edits to this note
+  
+  @@map("notes")
+}
+
+// NoteEdit model for tracking note edit history
+model NoteEdit {
+  id                String    @id @default(uuid())
+  content           String    // The content at this point in time
+  createdAt         DateTime  @default(now())
+  
+  // Relationships
+  noteId            String
+  note              Note      @relation(fields: [noteId], references: [id])
+  userId            String
+  user              User      @relation(fields: [userId], references: [id])
+  
+  @@map("note_edits")
 }

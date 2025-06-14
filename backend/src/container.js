@@ -18,6 +18,7 @@ import emailService from './services/email.service.js';
 import cloudflareR2Service from './services/cloudflare-r2.service.js';
 import socketService from './services/socket.service.js';
 import candidateAccessService from './services/candidate-access.service.js';
+import noteService from './services/note.service.js';
 
 // Import controllers
 import * as authController from './controllers/auth.controller.js';
@@ -59,6 +60,7 @@ container.register({
   responseService: asValue(responseService),
   socketService: asValue(socketService),
   candidateAccessService: asValue(candidateAccessService),
+  noteService: asValue(noteService),
   
   // Controllers
   authController: asValue(authController),
