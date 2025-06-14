@@ -19,6 +19,9 @@ let io;
 // Store connected users
 const connectedUsers = new Map();
 
+// Store active video rooms
+const activeRooms = new Map();
+
 /**
  * Initialize Socket.IO server
  * @param {Object} httpServer - HTTP server instance
@@ -97,6 +100,9 @@ function handleConnection(socket) {
 
   // Handle chat events
   setupChatEvents(socket);
+  
+  // Handle WebRTC events
+  setupWebRTCEvents(socket);
 
   // Handle disconnect
   socket.on('disconnect', () => {
@@ -110,6 +116,9 @@ function handleConnection(socket) {
         connectedUsers.delete(userId);
       }
     }
+    
+    // Handle WebRTC cleanup
+    cleanupUserRooms(socket);
   });
 }
 
@@ -204,6 +213,124 @@ function setupChatEvents(socket) {
       },
       timestamp: new Date().toISOString()
     });
+  });
+}
+
+/**
+ * Setup WebRTC-related socket events for video chat
+ * @param {Object} socket - Socket instance
+ */
+function setupWebRTCEvents(socket) {
+  // Join a video room (typically an interview room)
+  socket.on('webrtc:joinRoom', (roomId) => {
+    const roomName = `webrtc:${roomId}`;
+    socket.join(roomName);
+    
+    // Keep track of users in rooms
+    if (!activeRooms.has(roomName)) {
+      activeRooms.set(roomName, new Set());
+    }
+    activeRooms.get(roomName).add(socket.id);
+    
+    // Get all users in the room
+    const usersInRoom = Array.from(activeRooms.get(roomName))
+      .filter(id => id !== socket.id);
+    
+    // Emit event with all users in the room
+    socket.emit('webrtc:usersInRoom', usersInRoom);
+    
+    // Notify other users that someone joined
+    socket.to(roomName).emit('webrtc:userJoined', socket.id);
+    
+    logger.info(`User ${socket.user.id} joined WebRTC room: ${roomId}`);
+  });
+  
+  // Leave a video room
+  socket.on('webrtc:leaveRoom', (roomId) => {
+    const roomName = `webrtc:${roomId}`;
+    leaveWebRTCRoom(socket, roomName);
+  });
+  
+  // WebRTC signaling: sending an offer
+  socket.on('webrtc:offer', (data) => {
+    const { target, offer } = data;
+    socket.to(target).emit('webrtc:offer', {
+      offer,
+      from: socket.id
+    });
+    logger.debug(`WebRTC offer sent from ${socket.id} to ${target}`);
+  });
+  
+  // WebRTC signaling: sending an answer
+  socket.on('webrtc:answer', (data) => {
+    const { target, answer } = data;
+    socket.to(target).emit('webrtc:answer', {
+      answer,
+      from: socket.id
+    });
+    logger.debug(`WebRTC answer sent from ${socket.id} to ${target}`);
+  });
+  
+  // WebRTC signaling: sending ICE candidates
+  socket.on('webrtc:iceCandidate', (data) => {
+    const { target, candidate } = data;
+    socket.to(target).emit('webrtc:iceCandidate', {
+      candidate,
+      from: socket.id
+    });
+    logger.debug(`WebRTC ICE candidate sent from ${socket.id} to ${target}`);
+  });
+  
+  // Screen sharing status update
+  socket.on('webrtc:screenShare', (data) => {
+    const { roomId, isSharing } = data;
+    const roomName = `webrtc:${roomId}`;
+    
+    // Notify others in the room about screen sharing status
+    socket.to(roomName).emit('webrtc:screenShareUpdate', {
+      userId: socket.id,
+      isSharing
+    });
+    
+    logger.info(`User ${socket.user.id} ${isSharing ? 'started' : 'stopped'} screen sharing in room: ${roomId}`);
+  });
+}
+
+/**
+ * Helper function to leave a WebRTC room
+ * @param {Object} socket - Socket instance
+ * @param {string} roomName - Room name
+ */
+function leaveWebRTCRoom(socket, roomName) {
+  socket.leave(roomName);
+  
+  // Remove user from active room
+  if (activeRooms.has(roomName)) {
+    activeRooms.get(roomName).delete(socket.id);
+    
+    // If room is empty, remove it
+    if (activeRooms.get(roomName).size === 0) {
+      activeRooms.delete(roomName);
+    } else {
+      // Notify others that user left
+      socket.to(roomName).emit('webrtc:userLeft', socket.id);
+    }
+  }
+  
+  const roomId = roomName.replace('webrtc:', '');
+  logger.info(`User ${socket.user.id} left WebRTC room: ${roomId}`);
+}
+
+/**
+ * Clean up user's WebRTC rooms on disconnect
+ * @param {Object} socket - Socket instance
+ */
+function cleanupUserRooms(socket) {
+  // Find all rooms this socket is in
+  activeRooms.forEach((users, roomName) => {
+    if (users.has(socket.id)) {
+      leaveWebRTCRoom(socket, roomName);
+    }
   });
 }
 
