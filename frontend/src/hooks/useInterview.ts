@@ -1,5 +1,3 @@
-'use client';
-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { InterviewService, Interview, Submission, InterviewResult } from '../services/interviewService';
 
@@ -18,10 +16,10 @@ export const interviewKeys = {
 /**
  * Hook for fetching interviews list
  */
-export function useInterviews(page = 1, limit = 10) {
+export function useInterviews(page = 1, limit = 10, filters?: { status?: string; candidateId?: string; search?: string }) {
   return useQuery({
-    queryKey: interviewKeys.list({ page, limit }),
-    queryFn: () => InterviewService.getInterviews(page, limit),
+    queryKey: interviewKeys.list({ page, limit, ...filters }),
+    queryFn: () => InterviewService.getInterviews(page, limit, filters),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
@@ -101,6 +99,38 @@ export function useInterviewOperations() {
     },
   });
 
+  // Add questions to interview mutation
+  const addQuestionsToInterviewMutation = useMutation({
+    mutationFn: ({ interviewId, questions }: { 
+      interviewId: string; 
+      questions: Array<{
+        questionId: string;
+        order?: number;
+        customInstructions?: string;
+      }>;
+    }) => InterviewService.addQuestionsToInterview(interviewId, questions),
+    onSuccess: (updatedInterview) => {
+      // Update the interview in the cache
+      queryClient.setQueryData(interviewKeys.detail(updatedInterview.id), updatedInterview);
+    },
+    onError: (error) => {
+      console.error('Add questions to interview failed:', error);
+    },
+  });
+
+  // Remove question from interview mutation
+  const removeQuestionFromInterviewMutation = useMutation({
+    mutationFn: ({ interviewId, questionId }: { interviewId: string; questionId: string }) =>
+      InterviewService.removeQuestionFromInterview(interviewId, questionId),
+    onSuccess: (_, { interviewId }) => {
+      // Invalidate the interview to refetch with updated questions
+      queryClient.invalidateQueries({ queryKey: interviewKeys.detail(interviewId) });
+    },
+    onError: (error) => {
+      console.error('Remove question from interview failed:', error);
+    },
+  });
+
   return {
     // Create interview
     createInterview: createInterviewMutation.mutate,
@@ -125,6 +155,18 @@ export function useInterviewOperations() {
     joinInterviewAsync: joinInterviewMutation.mutateAsync,
     isJoiningInterview: joinInterviewMutation.isPending,
     joinInterviewError: joinInterviewMutation.error,
+
+    // Add questions to interview
+    addQuestionsToInterview: addQuestionsToInterviewMutation.mutate,
+    addQuestionsToInterviewAsync: addQuestionsToInterviewMutation.mutateAsync,
+    isAddingQuestionsToInterview: addQuestionsToInterviewMutation.isPending,
+    addQuestionsToInterviewError: addQuestionsToInterviewMutation.error,
+
+    // Remove question from interview
+    removeQuestionFromInterview: removeQuestionFromInterviewMutation.mutate,
+    removeQuestionFromInterviewAsync: removeQuestionFromInterviewMutation.mutateAsync,
+    isRemovingQuestionFromInterview: removeQuestionFromInterviewMutation.isPending,
+    removeQuestionFromInterviewError: removeQuestionFromInterviewMutation.error,
   };
 }
 

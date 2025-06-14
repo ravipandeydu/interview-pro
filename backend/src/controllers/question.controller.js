@@ -17,7 +17,7 @@ import { sendSuccess, sendPaginated } from '../utils/response.js';
  */
 export const getAllQuestions = async (req, res, next) => {
   try {
-    const { questionService } = req.scope;
+    const { questionService } = req.container.cradle;
     const { page = 1, limit = 10, category, difficulty, search, isActive } = req.query;
     
     const result = await questionService.getAllQuestions({
@@ -51,7 +51,7 @@ export const getAllQuestions = async (req, res, next) => {
  */
 export const getQuestionById = async (req, res, next) => {
   try {
-    const { questionService } = req.scope;
+    const { questionService } = req.container.cradle;
     const question = await questionService.getQuestionById(req.params.id);
     sendSuccess(res, 200, 'Question retrieved successfully', question);
   } catch (error) {
@@ -67,7 +67,7 @@ export const getQuestionById = async (req, res, next) => {
  */
 export const createQuestion = async (req, res, next) => {
   try {
-    const { questionService } = req.scope;
+    const { questionService } = req.container.cradle;
     const createdById = req.user.id; // Get the current user's ID from the JWT
     const questionData = { ...req.body, createdById };
     
@@ -86,7 +86,7 @@ export const createQuestion = async (req, res, next) => {
  */
 export const updateQuestion = async (req, res, next) => {
   try {
-    const { questionService } = req.scope;
+    const { questionService } = req.container.cradle;
     const { id } = req.params;
     const updateData = req.body;
     
@@ -105,7 +105,7 @@ export const updateQuestion = async (req, res, next) => {
  */
 export const deleteQuestion = async (req, res, next) => {
   try {
-    const { questionService } = req.scope;
+    const { questionService } = req.container.cradle;
     await questionService.deleteQuestion(req.params.id);
     sendSuccess(res, 200, 'Question deleted successfully');
   } catch (error) {
@@ -121,7 +121,7 @@ export const deleteQuestion = async (req, res, next) => {
  */
 export const generateQuestions = async (req, res, next) => {
   try {
-    const { questionService, aiService } = req.scope;
+    const { questionService, aiService } = req.container.cradle;
     const { jobTitle, skills, categories, count = 5 } = req.body;
     const createdById = req.user.id;
     

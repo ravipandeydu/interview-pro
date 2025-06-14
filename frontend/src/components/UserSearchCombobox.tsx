@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { Combobox, ComboboxOption } from '@/components/ui/combobox';
-import { useAllUsers } from '@/hooks/useUser';
+import { useAllCandidates } from '@/hooks/useCandidate';
 
 interface UserSearchComboboxProps {
   onUserSelect: (userId: string) => void;
@@ -12,66 +12,66 @@ interface UserSearchComboboxProps {
   disabled?: boolean;
 }
 
-// Mock user data for testing and fallback
-const mockUsers = [
-  { id: '1', name: 'John Doe', email: 'john@example.com' },
-  { id: '2', name: 'Jane Smith', email: 'jane@example.com' },
-  { id: '3', name: 'Michael Johnson', email: 'michael@example.com' },
-  { id: '4', name: 'Emily Davis', email: 'emily@example.com' },
-  { id: '5', name: 'Robert Wilson', email: 'robert@example.com' },
+// Mock candidate data for testing and fallback
+const mockCandidates = [
+  { id: '1', fullName: 'John Doe', email: 'john@example.com' },
+  { id: '2', fullName: 'Jane Smith', email: 'jane@example.com' },
+  { id: '3', fullName: 'Michael Johnson', email: 'michael@example.com' },
+  { id: '4', fullName: 'Emily Davis', email: 'emily@example.com' },
+  { id: '5', fullName: 'Robert Wilson', email: 'robert@example.com' },
 ];
 
 export function UserSearchCombobox({
   onUserSelect,
   selectedUserId,
-  placeholder = 'Search for a user...',
+  placeholder = 'Search for a candidate...',
   className,
   disabled = false,
 }: UserSearchComboboxProps) {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
   
-  // Use the useAllUsers hook to get all users at once
-  const { data: allUsersData, isLoading, error: fetchError } = useAllUsers(100);
-  console.log(allUsersData, "allUsersData")
+  // Use the useAllCandidates hook to get all candidates at once
+  const { data: allCandidatesData, isLoading, error: fetchError } = useAllCandidates(100);
+  console.log(allCandidatesData, "allCandidatesData")
 
   // Handle fetch errors
   React.useEffect(() => {
     if (fetchError) {
-      console.error('Fetch users error:', fetchError);
-      setError('Error fetching users. Using mock data instead.');
+      console.error('Fetch candidates error:', fetchError);
+      setError('Error fetching candidates. Using mock data instead.');
     } else {
       setError(null);
     }
   }, [fetchError]);
 
-  // Get all available users
-  const allUsers = React.useMemo(() => {
-    if (allUsersData?.data && allUsersData.data.length > 0 && !fetchError) {
-      return allUsersData.data?.filter((user) => user.role === "USER") || [];
+  // Get all available candidates
+  const allCandidates = React.useMemo(() => {
+    if (allCandidatesData?.candidates && allCandidatesData.candidates.length > 0 && !fetchError) {
+      return allCandidatesData.candidates || [];
     }
-    return mockUsers;
-  }, [allUsersData, fetchError]);
+    return mockCandidates;
+  }, [allCandidatesData, fetchError]);
 
-  // Filter users based on search query
-  const filteredUsers = React.useMemo(() => {
-    if (!searchQuery) return allUsers;
+  // Filter candidates based on search query
+  const filteredCandidates = React.useMemo(() => {
+    if (!searchQuery) return allCandidates;
     
     const lowerQuery = searchQuery.toLowerCase();
-    return allUsers.filter(user => {
-      const name = (user.name || '').toLowerCase();
-      const email = (user.email || '').toLowerCase();
+    return allCandidates.filter(candidate => {
+      const name = (candidate.fullName || '').toLowerCase();
+      const email = (candidate.email || '').toLowerCase();
       return name.includes(lowerQuery) || email.includes(lowerQuery);
     });
-  }, [allUsers, searchQuery]);
+  }, [allCandidates, searchQuery]);
 
-  // Transform the filtered users into options for the combobox
-  const userOptions: ComboboxOption[] = React.useMemo(() => {
-    return filteredUsers.map((user) => ({
-      value: user.id,
-      label: user.name || user.email,
+  // Transform the filtered candidates into options for the combobox
+  const candidateOptions: ComboboxOption[] = React.useMemo(() => {
+    return filteredCandidates.map((candidate) => ({
+      value: candidate.id,
+      label: candidate.fullName || candidate.email,
     }));
-  }, [filteredUsers]);
+  }, [filteredCandidates]);
 
   // Handle input change for the combobox
   const handleInputChange = React.useCallback((value: string) => {
@@ -89,21 +89,21 @@ export function UserSearchCombobox({
   // Log for debugging
   React.useEffect(() => {
     console.log('Search query:', searchQuery);
-    console.log('All users:', allUsers);
-    console.log('Filtered users:', filteredUsers);
-    console.log('User options:', userOptions);
-  }, [searchQuery, allUsers, filteredUsers, userOptions]);
+    console.log('All candidates:', allCandidates);
+    console.log('Filtered candidates:', filteredCandidates);
+    console.log('Candidate options:', candidateOptions);
+  }, [searchQuery, allCandidates, filteredCandidates, candidateOptions]);
 
   return (
     <div className={className}>
       {error && <p className="text-sm text-red-500 mb-2">{error}</p>}
       <Combobox
-        options={userOptions}
+        options={candidateOptions}
         value={selectedUserId}
         onValueChange={handleSelectionChange}
         onInputChange={handleInputChange}
         placeholder={placeholder}
-        emptyMessage={isLoading ? 'Loading...' : 'No users found'}
+        emptyMessage={isLoading ? 'Loading...' : 'No candidates found'}
         disabled={disabled}
       />
     </div>

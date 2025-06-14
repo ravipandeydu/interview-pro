@@ -8,8 +8,14 @@
  */
 
 import { Resend } from 'resend';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import config from '../config/index.js';
 import logger from '../utils/logger.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Initialize Resend client
 let resend = null;
@@ -322,10 +328,84 @@ const sendNotification = async (email, data) => {
   });
 };
 
+/**
+ * Send a general notification email
+ * @param {string} to - Recipient email
+ * @param {string} subject - Email subject
+ * @param {string} message - Email message
+ * @returns {Promise<object>} - Response from email provider
+ */
+const sendSimpleNotification = async (to, subject, message) => {
+  const template = fs.readFileSync(
+    path.join(__dirname, '../templates/notification.html'),
+    'utf8'
+  );
+  
+  const html = template
+    .replace('{{subject}}', subject)
+    .replace('{{message}}', message);
+  
+  return sendEmail({
+    to,
+    subject,
+    html
+  });
+};
+
+/**
+ * Send an interview invitation email with access link
+ * @param {string} to - Candidate email
+ * @param {string} candidateName - Candidate's name
+ * @param {string} position - Job position
+ * @param {string} interviewType - Type of interview
+ * @param {number} duration - Interview duration in minutes
+ * @param {string} accessLink - Unique access link for the interview
+ * @param {Date} expiryDate - When the access link expires
+ * @param {number} questionCount - Number of questions in the interview
+ * @param {string} companyName - Company name
+ * @returns {Promise<object>} - Response from email provider
+ */
+const sendInterviewInvitation = async (to, candidateName, position, interviewType, duration, accessLink, expiryDate, questionCount, companyName) => {
+  const template = fs.readFileSync(
+    path.join(__dirname, '../templates/interview-invitation.html'),
+    'utf8'
+  );
+  
+  const formattedExpiryDate = new Date(expiryDate).toLocaleString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+  
+  const currentYear = new Date().getFullYear();
+  
+  const html = template
+    .replace(/{{candidateName}}/g, candidateName)
+    .replace(/{{position}}/g, position)
+    .replace(/{{interviewType}}/g, interviewType)
+    .replace(/{{duration}}/g, duration)
+    .replace(/{{accessLink}}/g, accessLink)
+    .replace(/{{expiryDate}}/g, formattedExpiryDate)
+    .replace(/{{questionCount}}/g, questionCount)
+    .replace(/{{companyName}}/g, companyName)
+    .replace(/{{currentYear}}/g, currentYear);
+  
+  return sendEmail({
+    to,
+    subject: 'Interview Invitation',
+    html
+  });
+};
+
 export default {
   sendEmail,
   sendWelcome,
   sendPasswordReset,
   sendEmailVerification,
   sendNotification,
+  sendSimpleNotification,
+  sendInterviewInvitation
 };

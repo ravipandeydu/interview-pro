@@ -17,6 +17,7 @@ import * as responseService from './services/response.service.js';
 import emailService from './services/email.service.js';
 import cloudflareR2Service from './services/cloudflare-r2.service.js';
 import socketService from './services/socket.service.js';
+import candidateAccessService from './services/candidate-access.service.js';
 
 // Import controllers
 import * as authController from './controllers/auth.controller.js';
@@ -27,6 +28,7 @@ import * as notificationController from './controllers/notification.controller.j
 import * as interviewController from './controllers/interview.controller.js';
 import * as questionController from './controllers/question.controller.js';
 import * as responseController from './controllers/response.controller.js';
+import * as candidateAccessController from './controllers/candidate-access.controller.js';
 
 // Import middlewares
 import * as authMiddleware from './middlewares/auth.middleware.js';
@@ -56,6 +58,7 @@ container.register({
   questionService: asValue(questionService),
   responseService: asValue(responseService),
   socketService: asValue(socketService),
+  candidateAccessService: asValue(candidateAccessService),
   
   // Controllers
   authController: asValue(authController),
@@ -66,6 +69,7 @@ container.register({
   interviewController: asValue(interviewController),
   questionController: asValue(questionController),
   responseController: asValue(responseController),
+  candidateAccessController: asValue(candidateAccessController),
   
   // Middlewares
   authMiddleware: asValue(authMiddleware),

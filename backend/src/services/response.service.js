@@ -108,6 +108,90 @@ export const submitResponse = async (responseData) => {
 };
 
 /**
+ * Create a new response or update an existing one
+ * @param {Object} prisma - Prisma client instance
+ * @param {Object} responseData - Response data
+ * @returns {Object} Created or updated response object
+ */
+export const createOrUpdateResponse = async (prismaClient, responseData) => {
+  const { interviewId, interviewQuestionId, content, recordingUrl } = responseData;
+  
+  // Check if interview exists
+  const interview = await prismaClient.interview.findUnique({
+    where: { id: interviewId },
+  });
+
+  if (!interview) {
+    throw new ApiError('Interview not found', 404);
+  }
+
+  // Check if interview question exists
+  const interviewQuestion = await prismaClient.interviewQuestion.findUnique({
+    where: { id: interviewQuestionId },
+    include: {
+      response: true,
+    },
+  });
+
+  if (!interviewQuestion) {
+    throw new ApiError('Interview question not found', 404);
+  }
+
+  // Check if the interview question belongs to the specified interview
+  if (interviewQuestion.interviewId !== interviewId) {
+    throw new ApiError('Interview question does not belong to the specified interview', 400);
+  }
+
+  // If a response already exists, update it; otherwise, create a new one
+  if (interviewQuestion.response) {
+    // Update existing response
+    return await prismaClient.response.update({
+      where: { id: interviewQuestion.response.id },
+      data: {
+        content,
+        recordingUrl,
+      },
+      include: {
+        interview: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+        interviewQuestion: {
+          include: {
+            question: true,
+          },
+        },
+      },
+    });
+  } else {
+    // Create new response
+    return await prismaClient.response.create({
+      data: {
+        content,
+        recordingUrl,
+        interviewId,
+        interviewQuestionId,
+      },
+      include: {
+        interview: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+        interviewQuestion: {
+          include: {
+            question: true,
+          },
+        },
+      },
+    });
+  }
+};
+
+/**
  * Update a response
  * @param {string} id - Response ID
  * @param {Object} updateData - Data to update
@@ -202,6 +286,7 @@ export const getResponsesByInterviewId = async (interviewId) => {
 const responseService = {
   getResponseById,
   submitResponse,
+  createOrUpdateResponse,
   updateResponse,
   deleteResponse,
   getResponsesByInterviewId,

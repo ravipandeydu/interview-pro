@@ -49,6 +49,12 @@ export function Header() {
                       Dashboard
                     </Link>
                     <Link
+                      href="/interviews"
+                      className="transition-colors hover:text-foreground/80 text-foreground/60"
+                    >
+                      Interviews
+                    </Link>
+                    <Link
                       href="/interviews/new"
                       className="transition-colors hover:text-foreground/80 text-foreground/60"
                     >

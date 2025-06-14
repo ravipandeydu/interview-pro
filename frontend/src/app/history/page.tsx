@@ -175,9 +175,9 @@ export default function HistoryPage() {
                 <div className="flex justify-between items-start">
                   <div>
                     <CardTitle>{interview.title}</CardTitle>
-                    <CardDescription className="mt-1">
+                    {/* <CardDescription className="mt-1">
                       {formatDate(interview.scheduledAt)} at {formatTime(interview.scheduledAt)}
-                    </CardDescription>
+                    </CardDescription> */}
                   </div>
                   {getStatusBadge(interview.status)}
                 </div>

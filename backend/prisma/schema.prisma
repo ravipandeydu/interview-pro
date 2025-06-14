@@ -99,6 +99,11 @@ model Interview {
   aiAnalysis        Json?     // JSON field for AI analysis results
   recordingUrl      String?
   transcriptUrl     String?
+  accessToken       String?   @unique // Unique token for candidate access
+  accessTokenExpires DateTime? // When the access token expires
+  candidateStartedAt DateTime? // When the candidate started the interview
+  candidateCompletedAt DateTime? // When the candidate completed the interview
+  invitationSentAt  DateTime? // When the invitation was sent to the candidate
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   

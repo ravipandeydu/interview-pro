@@ -49,10 +49,8 @@ export default function CreateInterviewPage() {
       // Format the data for API
       const interviewData = {
         ...data,
-        startTime: data.scheduledDate.toISOString(),
-        // Calculate end time based on duration
-        endTime: new Date(data.scheduledDate.getTime() + data.duration * 60000).toISOString(),
-        status: 'scheduled',
+        // Remove startTime and endTime as they don't exist in the Prisma schema
+        status: 'SCHEDULED', // Use uppercase to match the enum in Prisma
       };
       
       // Create the interview

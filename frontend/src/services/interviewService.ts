@@ -1,18 +1,19 @@
-import { api } from "../lib/api";
+import {api} from '@/lib/api';
 
 // Types for interview-related data
 export interface Interview {
   id: string;
   title: string;
   description: string;
-  startTime: string;
-  endTime: string;
-  status: 'scheduled' | 'in-progress' | 'completed' | 'cancelled';
+  scheduledDate: string | Date; // Changed from startTime/endTime to match backend
+  duration: number; // Duration in minutes
+  status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'; // Updated to match backend enum
   questions: Question[];
   candidateId?: string;
-  interviewerId?: string;
+  recruiterId?: string; // Changed from interviewerId to match backend
   createdAt: string;
   updatedAt: string;
+  // Removed accessToken as it's generated separately by the backend
 }
 
 export interface Question {
@@ -47,21 +48,7 @@ export interface Submission {
       input: string;
       expectedOutput: string;
       actualOutput: string;
-    }[];
-  };
-  aiAnalysis?: {
-    score: number;
-    feedback: string;
-    strengths: string[];
-    weaknesses: string[];
-    suggestions: string[];
-  };
-  plagiarismReport?: {
-    score: number;
-    matches: {
-      source: string;
-      similarity: number;
-      matchedText: string;
+      error?: string;
     }[];
   };
   createdAt: string;
@@ -69,35 +56,47 @@ export interface Submission {
 }
 
 export interface InterviewResult {
-  id: string;
-  interviewId: string;
-  candidateId: string;
-  overallScore: number;
+  interview: Interview;
+  submissions: Submission[];
+  totalScore: number;
+  maxPossibleScore: number;
+  percentageScore: number;
   feedback: string;
-  submissionIds: string[];
-  createdAt: string;
-  updatedAt: string;
+  recommendations: string[];
 }
 
-// Interview service using axios for API calls
+/**
+ * Service for managing interviews
+ */
 export class InterviewService {
   /**
-   * Get all interviews (paginated)
+   * Get all interviews with filtering and pagination
    */
-  static async getInterviews(page = 1, limit = 10): Promise<{
+  static async getInterviews(
+    page = 1,
+    limit = 10,
+    filters?: {
+      status?: string;
+      candidateId?: string;
+      search?: string;
+    }
+  ): Promise<{
     interviews: Interview[];
-    pagination: {
-      page: number;
-      limit: number;
-      total: number;
-      totalPages: number;
-    };
+    page: number;
+    limit: number;
+    total: number;
   }> {
     try {
-      const { data } = await api.get('interviews', {
-        params: { page, limit },
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        ...(filters?.status && { status: filters.status }),
+        ...(filters?.candidateId && { candidateId: filters.candidateId }),
+        ...(filters?.search && { search: filters.search }),
       });
-      return data.data;
+
+      const { data } = await api.get(`interviews?${queryParams}`);
+      return data;
     } catch (error) {
       console.error('Get interviews error:', error);
       throw error;
@@ -107,9 +106,9 @@ export class InterviewService {
   /**
    * Get interview by ID
    */
-  static async getInterview(interviewId: string): Promise<Interview> {
+  static async getInterview(id: string): Promise<Interview> {
     try {
-      const { data } = await api.get(`interviews/${interviewId}`);
+      const { data } = await api.get(`interviews/${id}`);
       return data.data;
     } catch (error) {
       console.error('Get interview error:', error);
@@ -131,14 +130,11 @@ export class InterviewService {
   }
 
   /**
-   * Update an interview
+   * Update interview
    */
-  static async updateInterview(
-    interviewId: string,
-    interviewData: Partial<Interview>
-  ): Promise<Interview> {
+  static async updateInterview(id: string, updateData: Partial<Interview>): Promise<Interview> {
     try {
-      const { data } = await api.put(`interviews/${interviewId}`, interviewData);
+      const { data } = await api.patch(`interviews/${id}`, updateData);
       return data.data;
     } catch (error) {
       console.error('Update interview error:', error);
@@ -246,6 +242,74 @@ export class InterviewService {
       return data.data;
     } catch (error) {
       console.error('Generate PDF report error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate and send an interview invitation to a candidate
+   * @param interviewId Interview ID
+   * @param candidateId Candidate ID
+   * @returns Success status and access token information
+   */
+  static async sendInterviewInvitation(interviewId: string, candidateId: string): Promise<{
+    success: boolean;
+    message: string;
+    accessToken: string;
+    accessTokenExpires: string;
+  }> {
+    try {
+      const { data } = await api.post(`candidate-access/send-invitation`, {
+        interviewId,
+        candidateId
+      });
+      return data.data;
+    } catch (error) {
+      console.error('Send interview invitation error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Add questions to an interview
+   * @param interviewId Interview ID
+   * @param questions Array of question objects with questionId, order, and customInstructions
+   * @returns Updated interview object
+   */
+  static async addQuestionsToInterview(
+    interviewId: string,
+    questions: Array<{
+      questionId: string;
+      order?: number;
+      customInstructions?: string;
+    }>
+  ): Promise<Interview> {
+    try {
+      const { data } = await api.post(`interviews/${interviewId}/questions`, {
+        questions,
+      });
+      return data.data;
+    } catch (error) {
+      console.error('Add questions to interview error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Remove a question from an interview
+   * @param interviewId Interview ID
+   * @param questionId Question ID
+   * @returns Success message
+   */
+  static async removeQuestionFromInterview(
+    interviewId: string,
+    questionId: string
+  ): Promise<{ message: string }> {
+    try {
+      const { data } = await api.delete(`interviews/${interviewId}/questions/${questionId}`);
+      return data;
+    } catch (error) {
+      console.error('Remove question from interview error:', error);
       throw error;
     }
   }
