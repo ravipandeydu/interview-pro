@@ -57,12 +57,13 @@ const candidateAccessService = {
    * @param token The access token for the interview
    * @param interviewQuestionId The ID of the interview question
    * @param responseText The candidate's response text
+   * @param language Optional programming language for coding questions
    * @returns The created/updated response
    */
-  submitResponse: async (token: string, interviewQuestionId: string, responseText: string): Promise<InterviewResponse> => {
-    const response = await api.post(`${BASE_URL}/interview/${token}/response`, {
-      interviewQuestionId,
-      responseText
+  submitResponse: async (token: string, interviewQuestionId: string, responseText: string, language?: string): Promise<InterviewResponse> => {
+    const response = await api.post(`${BASE_URL}/interview/${token}/questions/${interviewQuestionId}/response`, {
+      content: responseText,
+      language
     });
     return response.data.data;
   },

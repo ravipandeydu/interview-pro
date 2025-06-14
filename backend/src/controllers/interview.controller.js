@@ -151,6 +151,37 @@ export const removeQuestionFromInterview = async (req, res, next) => {
   }
 };
 
+/**
+ * Join an interview session
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ */
+export const joinInterview = async (req, res, next) => {
+  try {
+    const { interviewService } = req.container.cradle;
+    const { id } = req.params;
+    const userId = req.user.id;
+    
+    // Get the interview details
+    const interview = await interviewService.getInterviewById(id);
+    
+    // Update the interview status to IN_PROGRESS if it's currently SCHEDULED
+    if (interview.status === 'SCHEDULED') {
+      await interviewService.updateInterview(id, { status: 'IN_PROGRESS' });
+    }
+    
+    // Return the interview data and a token for video chat
+    // In a real implementation, you might generate a token for video service here
+    sendSuccess(res, 200, 'Successfully joined the interview', {
+      interview,
+      token: id // Using interview ID as token for simplicity
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   getAllInterviews,
   getInterviewById,
@@ -158,5 +189,6 @@ export default {
   updateInterview,
   deleteInterview,
   addQuestionsToInterview,
-  removeQuestionFromInterview
+  removeQuestionFromInterview,
+  joinInterview
 };

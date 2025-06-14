@@ -36,9 +36,13 @@ export const generateAndSendAccessLink = async (req, res, next) => {
     );
 
     sendSuccess(res, 200, 'Interview invitation sent successfully', {
+      success: true,
+      message: 'Interview invitation sent successfully',
       interviewId: interview.id,
       candidateEmail: interview.candidate.email,
       invitationSentAt: interview.invitationSentAt,
+      accessToken: interview.accessToken,
+      accessTokenExpires: interview.accessTokenExpires,
     });
   } catch (error) {
     next(error);

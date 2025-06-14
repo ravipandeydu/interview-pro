@@ -36,6 +36,8 @@ export function initializeSocketIO(httpServer) {
     }
   });
 
+  logger.info(`Socket.IO initializing with CORS origin: ${config.corsOrigin}`);
+
   // Middleware for authentication
   io.use(authenticateSocket);
 
@@ -52,15 +54,20 @@ export function initializeSocketIO(httpServer) {
  * @param {Function} next - Next function
  */
 function authenticateSocket(socket, next) {
+  logger.info(`Socket authentication attempt from ${socket.id}`);
+  logger.debug('Socket handshake data:', JSON.stringify(socket.handshake, null, 2));
+  
   const token = socket.handshake.auth.token;
   
   if (!token) {
+    logger.error('Socket authentication error: Token not provided');
     return next(new Error('Authentication error: Token not provided'));
   }
 
   try {
     const decoded = jwt.verify(token, config.jwtSecret);
     socket.user = decoded;
+    logger.info(`Socket authenticated for user: ${decoded.id}, role: ${decoded.role}`);
     next();
   } catch (error) {
     logger.error(`Socket authentication error: ${error.message}`);
@@ -76,7 +83,9 @@ function handleConnection(socket) {
   const userId = socket.user.id;
   const userRole = socket.user.role;
   
-  logger.info(`User connected: ${userId} with role: ${userRole}`);
+  logger.info(`User connected: ${userId} with role: ${userRole}, socket ID: ${socket.id}`);
+  logger.info(`Socket handshake query: ${JSON.stringify(socket.handshake.query)}`);
+  logger.info(`Socket handshake auth: ${JSON.stringify(socket.handshake.auth)}`);
 
   // Store user connection
   if (!connectedUsers.has(userId)) {

@@ -8,6 +8,9 @@ import { Video, Video as VideoIcon, Mic, MicOff, Camera, CameraOff, PhoneOff, Mo
 import { io, Socket } from 'socket.io-client';
 import Peer from 'simple-peer';
 
+// Import socketService
+import socketService from '../services/socketService';
+
 interface VideoChatProps {
   interviewId: string;
   userRole?: string; // Add userRole prop
@@ -20,6 +23,8 @@ interface PeerConnection {
 }
 
 export function VideoChat({ interviewId, userRole = 'CANDIDATE' }: VideoChatProps) {
+  // Ensure we're using a consistent room ID format
+  const roomId = interviewId?.toString();
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isMicMuted, setIsMicMuted] = useState(false);
@@ -37,21 +42,27 @@ export function VideoChat({ interviewId, userRole = 'CANDIDATE' }: VideoChatProp
   // Function to get user media
   const getUserMedia = useCallback(async () => {
     try {
+      console.log(`[WebRTC] Getting user media, video: ${!isVideoOff}, audio: ${!isMicMuted}`);
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: !isVideoOff, 
-        audio: !isMicMuted 
+        video: !isVideoOff,
+        audio: !isMicMuted
       });
+      
+      console.log(`[WebRTC] Got media stream:`, stream.id, 
+        `video tracks: ${stream.getVideoTracks().length}`, 
+        `audio tracks: ${stream.getAudioTracks().length}`);
       
       setLocalStream(stream);
       
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
+        console.log(`[WebRTC] Set local video source`);
       }
       
       return stream;
     } catch (error) {
-      console.error('Error accessing media devices:', error);
-      toast.error('Failed to access camera or microphone');
+      console.error('[WebRTC] Error accessing media devices:', error);
+      toast.error('Could not access camera or microphone');
       return null;
     }
   }, [isVideoOff, isMicMuted]);
@@ -66,10 +77,7 @@ export function VideoChat({ interviewId, userRole = 'CANDIDATE' }: VideoChatProp
       }
       
       // Notify peers that screen sharing has stopped
-      socketRef.current?.emit('webrtc:screenShare', {
-        roomId: interviewId,
-        isSharing: false
-      });
+      socketRef.current?.emit('webrtc:screenShare', { roomId, isSharing: false });
       
       // Restore video stream if video is enabled
       if (!isVideoOff && localStream) {
@@ -111,9 +119,9 @@ export function VideoChat({ interviewId, userRole = 'CANDIDATE' }: VideoChatProp
         
         // Notify peers that screen sharing has started
         socketRef.current?.emit('webrtc:screenShare', {
-          roomId: interviewId,
-          isSharing: true
-        });
+        roomId,
+        isSharing: true
+      });
         
         setIsScreenSharing(true);
         toast.success('Screen sharing started');
@@ -126,6 +134,7 @@ export function VideoChat({ interviewId, userRole = 'CANDIDATE' }: VideoChatProp
   
   // Function to create a peer connection
   const createPeer = (userToSignal: string, callerId: string, stream: MediaStream) => {
+    console.log(`[WebRTC] Creating peer connection as initiator to ${userToSignal}`);
     const peer = new Peer({
       initiator: true,
       trickle: false,
@@ -133,10 +142,19 @@ export function VideoChat({ interviewId, userRole = 'CANDIDATE' }: VideoChatProp
     });
     
     peer.on('signal', (signal) => {
+      console.log(`[WebRTC] Sending offer signal to ${userToSignal}`);
       socketRef.current?.emit('webrtc:offer', {
         target: userToSignal,
         offer: signal
       });
+    });
+    
+    peer.on('connect', () => {
+      console.log(`[WebRTC] Peer connection established with ${userToSignal}`);
+    });
+    
+    peer.on('error', (err) => {
+      console.error(`[WebRTC] Peer connection error with ${userToSignal}:`, err);
     });
     
     return { peerId: userToSignal, peer };
@@ -144,6 +162,7 @@ export function VideoChat({ interviewId, userRole = 'CANDIDATE' }: VideoChatProp
   
   // Function to add a peer connection
   const addPeer = (incomingSignal: Peer.SignalData, callerId: string, stream: MediaStream) => {
+    console.log(`[WebRTC] Adding peer connection from ${callerId} (not initiator)`);
     const peer = new Peer({
       initiator: false,
       trickle: false,
@@ -151,12 +170,22 @@ export function VideoChat({ interviewId, userRole = 'CANDIDATE' }: VideoChatProp
     });
     
     peer.on('signal', (signal) => {
+      console.log(`[WebRTC] Sending answer signal to ${callerId}`);
       socketRef.current?.emit('webrtc:answer', {
         target: callerId,
         answer: signal
       });
     });
     
+    peer.on('connect', () => {
+      console.log(`[WebRTC] Peer connection established with ${callerId}`);
+    });
+    
+    peer.on('error', (err) => {
+      console.error(`[WebRTC] Peer connection error with ${callerId}:`, err);
+    });
+    
+    console.log(`[WebRTC] Signaling to peer ${callerId} with incoming signal`);
     peer.signal(incomingSignal);
     
     return { peerId: callerId, peer };
@@ -164,92 +193,131 @@ export function VideoChat({ interviewId, userRole = 'CANDIDATE' }: VideoChatProp
   
   // Initialize WebRTC connection
   useEffect(() => {
-    if (!interviewId) return;
+    if (!roomId) return;
     
     setIsConnecting(true);
     
-    // Connect to socket server
-    const socket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000', {
-      auth: {
-        token: localStorage.getItem('token')
-      }
-    });
+    // Connect to socket server using socketService
+    console.log(`[WebRTC] Connecting to socket server via socketService...`);
     
-    socketRef.current = socket;
-    
-    // Get user media and join room
-    getUserMedia().then((stream) => {
-      if (!stream) {
+    // Connect to socket service
+    socketService.connect().then(connected => {
+      if (!connected) {
+        console.error(`[WebRTC] Failed to connect to socket server via socketService`);
+        toast.error('Failed to connect to video chat server');
         setIsConnecting(false);
         return;
       }
       
-      socket.emit('webrtc:joinRoom', interviewId);
+      const socket = socketService.getSocket();
+      if (!socket) {
+        console.error(`[WebRTC] Socket is null after connection`);
+        toast.error('Failed to connect to video chat server');
+        setIsConnecting(false);
+        return;
+      }
       
-      // Handle existing users in the room
-      socket.on('webrtc:usersInRoom', (users: string[]) => {
-        const peers: PeerConnection[] = [];
+      console.log(`[WebRTC] Socket connected with ID: ${socket.id}`);
+      socketRef.current = socket;
+      
+      // Get user media and join room
+      getUserMedia().then((stream) => {
+        if (!stream) {
+          setIsConnecting(false);
+          return;
+        }
         
-        users.forEach((userId) => {
-          const peerConnection = createPeer(userId, socket.id, stream);
-          peersRef.current.push(peerConnection);
-          peers.push(peerConnection);
+        console.log(`[WebRTC] Joining room with ID: ${roomId}, user role: ${userRole}`);
+        socket.emit('webrtc:joinRoom', roomId);
+        
+        // Handle existing users in the room
+        socket.on('webrtc:usersInRoom', (users) => {
+          console.log(`[WebRTC] Users in room ${roomId}:`, users);
+          const peers = [];
+          
+          users.forEach((userId) => {
+            console.log(`[WebRTC] Creating peer connection to ${userId}`);
+            const peerConnection = createPeer(userId, socket.id, stream);
+            peersRef.current.push(peerConnection);
+            peers.push(peerConnection);
+          });
+          
+          setPeers(peers);
         });
         
-        setPeers(peers);
-      });
-      
-      // Handle new user joining
-      socket.on('webrtc:userJoined', (userId: string) => {
-        const peerConnection = createPeer(userId, socket.id, stream);
-        peersRef.current.push(peerConnection);
+        // Handle new user joining
+        socket.on('webrtc:userJoined', (userId) => {
+          console.log(`[WebRTC] New user joined room ${roomId}:`, userId);
+          const peerConnection = createPeer(userId, socket.id, stream);
+          peersRef.current.push(peerConnection);
+          
+          setPeers(prevPeers => {
+            console.log(`[WebRTC] Updated peers:`, [...prevPeers, peerConnection].length);
+            return [...prevPeers, peerConnection];
+          });
+        });
         
-        setPeers(prevPeers => [...prevPeers, peerConnection]);
-      });
-      
-      // Handle receiving an offer
-      socket.on('webrtc:offer', ({ offer, from }) => {
-        const peerConnection = addPeer(offer, from, stream);
-        peersRef.current.push(peerConnection);
+        // Handle receiving an offer
+        socket.on('webrtc:offer', ({ offer, from }) => {
+          console.log(`[WebRTC] Received offer from ${from}`);
+          const peerConnection = addPeer(offer, from, stream);
+          peersRef.current.push(peerConnection);
+          
+          setPeers(prevPeers => {
+            console.log(`[WebRTC] Updated peers after offer:`, [...prevPeers, peerConnection].length);
+            return [...prevPeers, peerConnection];
+          });
+        });
         
-        setPeers(prevPeers => [...prevPeers, peerConnection]);
-      });
-      
-      // Handle receiving an answer
-      socket.on('webrtc:answer', ({ answer, from }) => {
-        const peerItem = peersRef.current.find(p => p.peerId === from);
-        if (peerItem) {
-          peerItem.peer.signal(answer);
-        }
-      });
-      
-      // Handle receiving ICE candidate
-      socket.on('webrtc:iceCandidate', ({ candidate, from }) => {
-        const peerItem = peersRef.current.find(p => p.peerId === from);
-        if (peerItem) {
-          peerItem.peer.signal({ candidate });
-        }
-      });
-      
-      // Handle user leaving
-      socket.on('webrtc:userLeft', (userId) => {
-        const peerItem = peersRef.current.find(p => p.peerId === userId);
-        if (peerItem) {
-          peerItem.peer.destroy();
-        }
+        // Handle receiving an answer
+        socket.on('webrtc:answer', ({ answer, from }) => {
+          console.log(`[WebRTC] Received answer from ${from}`);
+          const peerItem = peersRef.current.find(p => p.peerId === from);
+          if (peerItem) {
+            console.log(`[WebRTC] Applying answer signal from ${from}`);
+            peerItem.peer.signal(answer);
+          } else {
+            console.warn(`[WebRTC] No peer found for answer from ${from}`);
+          }
+        });
         
-        const peers = peersRef.current.filter(p => p.peerId !== userId);
-        peersRef.current = peers;
-        setPeers(peers);
+        // Handle receiving ICE candidate
+        socket.on('webrtc:iceCandidate', ({ candidate, from }) => {
+          console.log(`[WebRTC] Received ICE candidate from ${from}`);
+          const peerItem = peersRef.current.find(p => p.peerId === from);
+          if (peerItem) {
+            console.log(`[WebRTC] Applying ICE candidate from ${from}`);
+            peerItem.peer.signal({ candidate });
+          } else {
+            console.warn(`[WebRTC] No peer found for ICE candidate from ${from}`);
+          }
+        });
+        
+        // Handle user leaving
+        socket.on('webrtc:userLeft', (userId) => {
+          console.log(`[WebRTC] User left: ${userId}`);
+          const peerItem = peersRef.current.find(p => p.peerId === userId);
+          if (peerItem) {
+            console.log(`[WebRTC] Destroying peer connection with ${userId}`);
+            peerItem.peer.destroy();
+          } else {
+            console.warn(`[WebRTC] No peer found for user who left: ${userId}`);
+          }
+          
+          const peers = peersRef.current.filter(p => p.peerId !== userId);
+          peersRef.current = peers;
+          setPeers(peers);
+          console.log(`[WebRTC] Updated peers after user left:`, peers.length);
+        });
+        
+        // Handle screen sharing updates
+        socket.on('webrtc:screenShareUpdate', ({ userId, isSharing }) => {
+          toast.info(`${isSharing ? 'Screen sharing started' : 'Screen sharing stopped'} by another user`);
+        });
+        
+        setIsConnecting(false);
+        setIsConnected(true);
       });
-      
-      // Handle screen sharing updates
-      socket.on('webrtc:screenShareUpdate', ({ userId, isSharing }) => {
-        toast.info(`${isSharing ? 'Screen sharing started' : 'Screen sharing stopped'} by another user`);
-      });
-      
-      setIsConnecting(false);
-      setIsConnected(true);
     });
     
     // Cleanup function
@@ -266,11 +334,23 @@ export function VideoChat({ interviewId, userRole = 'CANDIDATE' }: VideoChatProp
       // Close all peer connections
       peersRef.current.forEach(({ peer }) => peer.destroy());
       
-      // Leave room and disconnect socket
-      socket.emit('webrtc:leaveRoom', interviewId);
-      socket.disconnect();
+      // Leave room but don't disconnect socket since it's managed by socketService
+      if (socketRef.current) {
+        console.log(`[WebRTC] Leaving room ${roomId}`);
+        socketRef.current.emit('webrtc:leaveRoom', roomId);
+        // Remove all event listeners
+        socketRef.current.off('webrtc:usersInRoom');
+        socketRef.current.off('webrtc:userJoined');
+        socketRef.current.off('webrtc:offer');
+        socketRef.current.off('webrtc:answer');
+        socketRef.current.off('webrtc:iceCandidate');
+        socketRef.current.off('webrtc:userLeft');
+        socketRef.current.off('webrtc:screenShareUpdate');
+      }
+      
+      socketRef.current = null;
     };
-  }, [interviewId]);
+  }, [roomId, getUserMedia, isVideoOff, isMicMuted]);
   
   // Toggle microphone
   const toggleMic = () => {
@@ -369,7 +449,7 @@ export function VideoChat({ interviewId, userRole = 'CANDIDATE' }: VideoChatProp
     setPeers([]);
     
     // Leave room
-    socketRef.current?.emit('webrtc:leaveRoom', interviewId);
+    socketRef.current?.emit('webrtc:leaveRoom', roomId);
     
     setIsConnected(false);
     setIsScreenSharing(false);
@@ -386,7 +466,7 @@ export function VideoChat({ interviewId, userRole = 'CANDIDATE' }: VideoChatProp
         return;
       }
       
-      socketRef.current?.emit('webrtc:joinRoom', interviewId);
+      socketRef.current?.emit('webrtc:joinRoom', roomId);
       setIsConnected(true);
       setIsConnecting(false);
       toast.success('Reconnected to video chat');
@@ -427,6 +507,9 @@ export function VideoChat({ interviewId, userRole = 'CANDIDATE' }: VideoChatProp
                   {userRole === 'RECRUITER' || userRole === 'ADMIN' 
                     ? 'Waiting for candidate to join...' 
                     : 'Waiting for interviewer to join...'}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Room ID: {roomId}
                 </p>
               </div>
             )}

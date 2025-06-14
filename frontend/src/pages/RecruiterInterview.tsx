@@ -32,6 +32,7 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { VideoChat } from '@/components/VideoChat';
 import { format } from 'date-fns';
+import { CodeEditor } from '@/components/CodeEditor';
 
 interface RecruiterInterviewProps {
   interviewId: string;
@@ -229,9 +230,21 @@ export const RecruiterInterview = ({ interviewId }: RecruiterInterviewProps) => 
                         <CardContent>
                           <div className="mb-4">
                             <h4 className="text-sm font-medium mb-1">Candidate's Answer:</h4>
-                            <div className="bg-muted p-3 rounded-md">
-                              {submission.answer}
-                            </div>
+                            {question?.type === 'coding' ? (
+                              <div className="rounded-md">
+                                <CodeEditor
+                                  value={submission.answer}
+                                  language={submission.language || 'javascript'}
+                                  readOnly={true}
+                                  height="200px"
+                                  onChange={() => {}}
+                                />
+                              </div>
+                            ) : (
+                              <div className="bg-muted p-3 rounded-md">
+                                {submission.answer}
+                              </div>
+                            )}
                           </div>
                           
                           {submission.feedback && (

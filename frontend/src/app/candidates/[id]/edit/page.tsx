@@ -7,10 +7,13 @@ import CandidateForm from '../../../../components/candidates/CandidateForm';
 import { useCandidate } from '../../../../hooks/useCandidate';
 import { Skeleton } from '../../../../components/ui/skeleton';
 import { Card, CardContent } from '../../../../components/ui/card';
+import React from 'react';
 
 export default function EditCandidatePage() {
   const params = useParams();
-  const candidateId = params.id as string;
+  // Use React.use() to unwrap the params Promise
+  const paramsData = React.use(params);
+  const candidateId = paramsData.id as string;
   const { getCandidate } = useCandidate();
   const { data: candidate, isLoading, isError } = getCandidate(candidateId);
 

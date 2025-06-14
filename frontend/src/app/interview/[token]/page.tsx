@@ -1,17 +1,19 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, use  } from 'react';
 import { useRouter } from 'next/navigation';
 import { CandidateInterview } from '@/pages/CandidateInterview';
 
-interface InterviewPageProps {
-  params: {
-    token: string;
-  };
-}
+// interface InterviewPageProps {
+//   params: {
+//     token: string;
+//   };
+// }
 
-export default function InterviewPage({ params }: InterviewPageProps) {
-  const { token } = params;
+type Params = Promise<{ token: string }>
+
+export default function InterviewPage({ params }: {params: Params}) {
+  const { token } = use(params);
   const router = useRouter();
 
   // Validate token format to prevent unnecessary API calls

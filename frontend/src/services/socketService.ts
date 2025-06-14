@@ -10,7 +10,7 @@
 
 import { io, Socket } from 'socket.io-client';
 import { toast } from 'sonner';
-import Cookies from 'js-cookie';
+import { tokenManager } from '../lib/api';
 
 type EventCallback = (data: any) => void;
 
@@ -47,11 +47,14 @@ class SocketService {
         return true;
       }
 
-      // Get the JWT token from cookies
-      const token = Cookies.get('token');
+      // Get the JWT token using tokenManager
+      const token = tokenManager.getToken();
+      console.log('[SocketService] Token retrieval attempt:', token ? 'Token found' : 'No token found');
+      
       if (!token) {
         const error = new Error('No authentication token found');
-        console.error(error);
+        console.error('[SocketService] Authentication error:', error);
+        toast.error('Authentication error: Please log in again');
         this.updateConnectionStatus({
           connected: false,
           error
@@ -60,10 +63,11 @@ class SocketService {
       }
 
       // Determine the backend URL
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      console.log(`[SocketService] Connecting to socket server at ${backendUrl}...`);
 
       // Initialize Socket.IO connection with auth token
-      this.socket = io(backendUrl, {
+      this.socket = io(backendUrl + '/', { // Explicitly use the default namespace
         auth: { token },
         reconnection: true,
         reconnectionDelay: 1000,
@@ -110,6 +114,8 @@ class SocketService {
         this.socket.on('connect_error', (error) => {
           clearTimeout(connectionTimeout);
           console.error('Socket connection error:', error);
+          console.error(`[SocketService] Error name: ${error.name}, message: ${error.message}`);
+          console.error(`[SocketService] Error details:`, error.data);
           this.connected = false;
           this.updateConnectionStatus({
             connected: false,
@@ -392,6 +398,14 @@ class SocketService {
    */
   updateCandidateStatus(candidateId: string, status: string): boolean {
     return this.emit('candidate:statusUpdate', { candidateId, status });
+  }
+
+  /**
+   * Get the socket instance
+   * @returns {Socket|null} Socket instance or null if not connected
+   */
+  getSocket(): Socket | null {
+    return this.socket;
   }
 
   /**

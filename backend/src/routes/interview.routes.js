@@ -301,4 +301,29 @@ router.post('/:id/questions', authenticate, authorize(['RECRUITER', 'ADMIN']), i
  */
 router.delete('/:id/questions/:questionId', authenticate, authorize(['RECRUITER', 'ADMIN']), interviewController.removeQuestionFromInterview);
 
+/**
+ * @swagger
+ * /api/v1/interviews/{id}/join:
+ *   post:
+ *     summary: Join an interview session
+ *     tags: [Interviews]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Interview ID
+ *     responses:
+ *       200:
+ *         description: Successfully joined the interview
+ *       404:
+ *         description: Interview not found
+ *       403:
+ *         description: Forbidden - requires recruiter or admin role
+ */
+router.post('/:id/join', authenticate, authorize(['RECRUITER', 'ADMIN']), interviewController.joinInterview);
+
 export default router;

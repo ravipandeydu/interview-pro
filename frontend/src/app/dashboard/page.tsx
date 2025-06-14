@@ -58,11 +58,11 @@ export default function DashboardPage() {
   };
 
   // Filter interviews by status
-  const upcomingInterviews = interviewsData?.interviews.filter(
+  const upcomingInterviews = interviewsData?.data.filter(
     (interview) => interview.status === 'scheduled'
   ) || [];
   
-  const pastInterviews = interviewsData?.interviews.filter(
+  const pastInterviews = interviewsData?.data.filter(
     (interview) => ['completed', 'cancelled'].includes(interview.status)
   ) || [];
 

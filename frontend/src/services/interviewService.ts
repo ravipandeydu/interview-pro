@@ -259,8 +259,7 @@ export class InterviewService {
     accessTokenExpires: string;
   }> {
     try {
-      const { data } = await api.post(`candidate-access/send-invitation`, {
-        interviewId,
+      const { data } = await api.post(`candidate-access/${interviewId}/send-invitation`, {
         candidateId
       });
       return data.data;
