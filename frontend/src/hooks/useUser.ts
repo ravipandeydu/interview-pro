@@ -179,6 +179,18 @@ export function useUserSearch(query: string, page = 1, limit = 20) {
 }
 
 /**
+ * Hook for getting all users
+ */
+export function useAllUsers(limit = 100) {
+  return useQuery({
+    queryKey: [...userKeys.all, 'all'],
+    queryFn: () => UserService.searchUsers(' ', 1, limit), // Using a space to get all users
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+}
+
+/**
  * Hook for user follow operations
  */
 export function useUserFollow() {

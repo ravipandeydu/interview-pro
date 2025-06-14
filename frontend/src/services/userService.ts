@@ -12,7 +12,7 @@ export class UserService {
    */
   static async getUserProfile(userId: string): Promise<User> {
     try {
-      const { data } = await api.get<User>(`/users/${userId}`);
+      const { data } = await api.get<User>(`users/${userId}`);
       return data;
     } catch (error) {
       console.error("Get user profile error:", error);
@@ -25,7 +25,7 @@ export class UserService {
    */
   static async getCurrentUserProfile(): Promise<User> {
     try {
-      const { data } = await api.get<UserResponse>("/api/users/me");
+      const { data } = await api.get<UserResponse>("users/me");
       return data?.data;
     } catch (error) {
       console.error("Get current user profile error:", error);
@@ -40,7 +40,7 @@ export class UserService {
     profileData: UserProfileFormData
   ): Promise<User> {
     try {
-      const { data } = await api.put<User>("/users/me", profileData);
+      const { data } = await api.put<User>("users/me", profileData);
       return data;
     } catch (error) {
       console.error("Update user profile error:", error);
@@ -57,7 +57,7 @@ export class UserService {
       formData.append("avatar", file);
 
       const { data } = await api.post<{ avatarUrl: string }>(
-        "/api/users/me/avatar",
+        "users/me/avatar",
         formData,
         {
           headers: {
@@ -78,7 +78,7 @@ export class UserService {
   static async deleteAvatar(): Promise<{ message: string }> {
     try {
       const { data } = await api.delete<{ message: string }>(
-        "/users/me/avatar"
+        "users/me/avatar"
       );
       return data;
     } catch (error) {
@@ -93,7 +93,7 @@ export class UserService {
   static async getUserPreferences(): Promise<Record<string, any>> {
     try {
       const { data } = await api.get<Record<string, any>>(
-        "/users/me/preferences"
+        "users/me/preferences"
       );
       return data;
     } catch (error) {
@@ -110,7 +110,7 @@ export class UserService {
   ): Promise<Record<string, any>> {
     try {
       const { data } = await api.put<Record<string, any>>(
-        "/users/me/preferences",
+        "users/me/preferences",
         preferences
       );
       return data;
@@ -142,7 +142,7 @@ export class UserService {
     };
   }> {
     try {
-      const { data } = await api.get("/users/me/activity", {
+      const { data } = await api.get("users/me/activity", {
         params: { page, limit },
       });
       return data;
@@ -157,7 +157,7 @@ export class UserService {
    */
   static async deleteAccount(password: string): Promise<{ message: string }> {
     try {
-      const { data } = await api.delete<{ message: string }>("/users/me", {
+      const { data } = await api.delete<{ message: string }>("users/me", {
         data: { password },
       });
       return data;
@@ -175,7 +175,7 @@ export class UserService {
     page = 1,
     limit = 20
   ): Promise<{
-    users: User[];
+    data: User[];
     pagination: {
       page: number;
       limit: number;
@@ -184,7 +184,7 @@ export class UserService {
     };
   }> {
     try {
-      const { data } = await api.get("/users/search", {
+      const { data } = await api.get("users/search", {
         params: { q: query, page, limit },
       });
       return data;
@@ -202,7 +202,7 @@ export class UserService {
   ): Promise<{ following: boolean; message: string }> {
     try {
       const { data } = await api.post<{ following: boolean; message: string }>(
-        `/users/${userId}/follow`
+        `users/${userId}/follow`
       );
       return data;
     } catch (error) {
@@ -228,7 +228,7 @@ export class UserService {
     };
   }> {
     try {
-      const { data } = await api.get(`/users/${userId}/followers`, {
+      const { data } = await api.get(`users/${userId}/followers`, {
         params: { page, limit },
       });
       return data;
@@ -255,7 +255,7 @@ export class UserService {
     };
   }> {
     try {
-      const { data } = await api.get(`/users/${userId}/following`, {
+      const { data } = await api.get(`users/${userId}/following`, {
         params: { page, limit },
       });
       return data;

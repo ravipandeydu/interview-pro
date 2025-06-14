@@ -11,7 +11,7 @@ import * as authService from './services/auth.service.js';
 import * as userService from './services/user.service.js';
 import * as aiService from './services/ai.service.js';
 import * as candidateService from './services/candidate.service.js';
-import * as interviewService from './services/interview.service.js';
+import interviewService from './services/interview.service.js';
 import * as questionService from './services/question.service.js';
 import * as responseService from './services/response.service.js';
 import emailService from './services/email.service.js';

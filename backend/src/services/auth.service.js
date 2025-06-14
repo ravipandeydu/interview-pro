@@ -1,6 +1,6 @@
 // src/services/auth.service.js
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
@@ -59,12 +59,23 @@ export async function register(userData) {
   // 3) Create user + add verification token
   let user;
   try {
+    // Convert role string to enum value if provided
+    let roleValue = Role.USER; // Default role
+    if (userData.role) {
+      // Make sure the role is a valid enum value
+      if (Object.values(Role).includes(userData.role)) {
+        roleValue = userData.role;
+      } else {
+        logger.warn(`Invalid role provided: ${userData.role}, using default USER role`);
+      }
+    }
+
     user = await prisma.user.create({
       data: {
         name: userData.name,
         email,
         password: hashedPassword,
-        role: userData.role || 'USER', // default in schema can also cover this
+        role: roleValue, // Use the enum value
         isEmailVerified: false, // ensure default false in schema
       },
     });

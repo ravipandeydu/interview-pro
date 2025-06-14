@@ -43,7 +43,7 @@ export class NotificationService {
    */
   static async getNotifications(): Promise<NotificationResponse> {
     try {
-      const { data } = await api.get<NotificationResponse>('/api/v1/notifications');
+      const { data } = await api.get<NotificationResponse>('notifications');
       return data;
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -56,7 +56,7 @@ export class NotificationService {
    */
   static async getUnreadCount(): Promise<NotificationCountResponse> {
     try {
-      const { data } = await api.get<NotificationCountResponse>('/api/v1/notifications/unread/count');
+      const { data } = await api.get<NotificationCountResponse>('notifications/unread/count');
       return data;
     } catch (error) {
       console.error('Error fetching unread notification count:', error);
@@ -70,7 +70,7 @@ export class NotificationService {
   static async markAsRead(notificationId: string): Promise<{ success: boolean; message: string }> {
     try {
       const { data } = await api.patch<{ success: boolean; message: string }>(
-        `/api/v1/notifications/${notificationId}/read`
+        `notifications/${notificationId}/read`
       );
       return data;
     } catch (error) {
@@ -85,7 +85,7 @@ export class NotificationService {
   static async markAllAsRead(): Promise<{ success: boolean; message: string }> {
     try {
       const { data } = await api.patch<{ success: boolean; message: string }>(
-        '/api/v1/notifications/read-all'
+        'notifications/read-all'
       );
       return data;
     } catch (error) {
@@ -100,7 +100,7 @@ export class NotificationService {
   static async deleteNotification(notificationId: string): Promise<{ success: boolean; message: string }> {
     try {
       const { data } = await api.delete<{ success: boolean; message: string }>(
-        `/api/v1/notifications/${notificationId}`
+        `notifications/${notificationId}`
       );
       return data;
     } catch (error) {
@@ -115,7 +115,7 @@ export class NotificationService {
   static async deleteAllNotifications(): Promise<{ success: boolean; message: string }> {
     try {
       const { data } = await api.delete<{ success: boolean; message: string }>(
-        '/api/v1/notifications'
+        'notifications'
       );
       return data;
     } catch (error) {

@@ -12,8 +12,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Next.js Starter",
-  description: "Production-grade Next.js 15.3.3 + React 19 frontend starter with TypeScript, ESLint, Tailwind CSS, and shadcn/ui",
+  title: "InterviewPro | Recruitment Interview Platform",
+  description: "A comprehensive platform for managing technical recruitment interviews, coding assessments, and candidate evaluations",
 };
 
 export default function RootLayout({

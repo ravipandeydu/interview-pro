@@ -12,7 +12,7 @@ import { ApiError } from './error.middleware.js';
  * @param {...string} roles - Allowed roles for the route
  * @returns {Function} Express middleware function
  */
-export const authorize = (...roles) => {
+export const authorize = (roles) => {
   return (req, res, next) => {
     // Check if user exists (should be set by authentication middleware)
     if (!req.user) {

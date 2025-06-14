@@ -271,6 +271,64 @@ export const deleteAvatar = async (userId) => {
   }
 };
 
+/**
+ * Search users by name or email
+ * @param {string} query - Search query
+ * @param {number} page - Page number
+ * @param {number} limit - Items per page
+ * @returns {Object} Users and pagination info
+ */
+export const searchUsers = async (query = '', page = 1, limit = 20) => {
+  const skip = (page - 1) * limit;
+  const searchQuery = query.trim();
+
+  // Get users with pagination and search filter
+  const users = await prisma.user.findMany({
+    where: {
+      OR: [
+        { name: { contains: searchQuery, mode: 'insensitive' } },
+        { email: { contains: searchQuery, mode: 'insensitive' } },
+      ],
+    },
+    skip,
+    take: Number(limit),
+    orderBy: {
+      name: 'asc',
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      bio: true,
+      avatar: true,
+      isEmailVerified: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  // Get total count for pagination
+  const total = await prisma.user.count({
+    where: {
+      OR: [
+        { name: { contains: searchQuery, mode: 'insensitive' } },
+        { email: { contains: searchQuery, mode: 'insensitive' } },
+      ],
+    },
+  });
+
+  return {
+    users,
+    pagination: {
+      page: parseInt(page, 10),
+      limit: parseInt(limit, 10),
+      total,
+      totalPages: Math.ceil(total / limit) || 1,
+    },
+  };
+};
+
 const userService = {
   getAllUsers,
   getUserById,
@@ -280,6 +338,7 @@ const userService = {
   updateProfile,
   uploadAvatar,
   deleteAvatar,
+  searchUsers,
 };
 
 export default userService;

@@ -72,7 +72,7 @@ export class ConfigService {
    */
   static async getAppConfig(): Promise<AppConfig> {
     try {
-      const { data } = await api.get<AppConfig>('/api/config');
+      const { data } = await api.get<AppConfig>('config');
       return data;
     } catch (error) {
       console.error('Get app config error:', error);
@@ -85,7 +85,7 @@ export class ConfigService {
    */
   static async updateAppConfig(config: Partial<AppConfig>): Promise<AppConfig> {
     try {
-      const { data } = await api.put<AppConfig>('/api/config', config);
+      const { data } = await api.put<AppConfig>('config', config);
       return data;
     } catch (error) {
       console.error('Update app config error:', error);
@@ -98,7 +98,7 @@ export class ConfigService {
    */
   static async getFeatureFlags(): Promise<FeatureFlag[]> {
     try {
-      const { data } = await api.get<FeatureFlag[]>('/api/config/features');
+      const { data } = await api.get<FeatureFlag[]>('config/features');
       return data;
     } catch (error) {
       console.error('Get feature flags error:', error);
@@ -111,7 +111,7 @@ export class ConfigService {
    */
   static async isFeatureEnabled(featureId: string): Promise<boolean> {
     try {
-      const { data } = await api.get<{ enabled: boolean }>(`/api/config/features/${featureId}`);
+      const { data } = await api.get<{ enabled: boolean }>(`config/features/${featureId}`);
       return data.enabled;
     } catch (error) {
       console.error('Check feature enabled error:', error);
@@ -124,7 +124,7 @@ export class ConfigService {
    */
   static async toggleFeatureFlag(featureId: string, enabled: boolean): Promise<FeatureFlag> {
     try {
-      const { data } = await api.patch<FeatureFlag>(`/api/config/features/${featureId}`, { enabled });
+      const { data } = await api.patch<FeatureFlag>(`config/features/${featureId}`, { enabled });
       return data;
     } catch (error) {
       console.error('Toggle feature flag error:', error);
@@ -137,7 +137,7 @@ export class ConfigService {
    */
   static async createFeatureFlag(flag: Omit<FeatureFlag, 'id' | 'createdAt' | 'updatedAt'>): Promise<FeatureFlag> {
     try {
-      const { data } = await api.post<FeatureFlag>('/api/config/features', flag);
+      const { data } = await api.post<FeatureFlag>('config/features', flag);
       return data;
     } catch (error) {
       console.error('Create feature flag error:', error);
@@ -150,7 +150,7 @@ export class ConfigService {
    */
   static async deleteFeatureFlag(featureId: string): Promise<{ message: string }> {
     try {
-      const { data } = await api.delete<{ message: string }>(`/api/config/features/${featureId}`);
+      const { data } = await api.delete<{ message: string }>(`config/features/${featureId}`);
       return data;
     } catch (error) {
       console.error('Delete feature flag error:', error);
@@ -173,7 +173,7 @@ export class ConfigService {
     version: string;
   }> {
     try {
-      const { data } = await api.get('/api/config/health');
+      const { data } = await api.get('config/health');
       return data;
     } catch (error) {
       console.error('Get system health error:', error);
@@ -191,7 +191,7 @@ export class ConfigService {
     environment: string;
   }> {
     try {
-      const { data } = await api.get('/api/config/version');
+      const { data } = await api.get('config/version');
       return data;
     } catch (error) {
       console.error('Get version info error:', error);
@@ -210,7 +210,7 @@ export class ConfigService {
     endTime?: string;
   }> {
     try {
-      const { data } = await api.get('/api/config/maintenance');
+      const { data } = await api.get('config/maintenance');
       return data;
     } catch (error) {
       console.error('Get maintenance status error:', error);
@@ -229,7 +229,7 @@ export class ConfigService {
     endTime?: string;
   }): Promise<{ message: string }> {
     try {
-      const { data } = await api.post<{ message: string }>('/api/config/maintenance', maintenance);
+      const { data } = await api.post<{ message: string }>('config/maintenance', maintenance);
       return data;
     } catch (error) {
       console.error('Set maintenance mode error:', error);
@@ -248,7 +248,7 @@ export class ConfigService {
     }>;
   }> {
     try {
-      const { data } = await api.get('/api/config/rate-limits');
+      const { data } = await api.get('config/rate-limits');
       return data;
     } catch (error) {
       console.error('Get rate limits error:', error);
@@ -267,7 +267,7 @@ export class ConfigService {
     enabled: boolean;
   }>> {
     try {
-      const { data } = await api.get('/api/config/locales');
+      const { data } = await api.get('config/locales');
       return data;
     } catch (error) {
       console.error('Get supported locales error:', error);
@@ -294,7 +294,7 @@ export class ConfigService {
     };
   }> {
     try {
-      const { data } = await api.get('/api/config/user');
+      const { data } = await api.get('config/user');
       return data;
     } catch (error) {
       console.error('Get user config error:', error);
@@ -321,7 +321,7 @@ export class ConfigService {
     };
   }>): Promise<{ message: string }> {
     try {
-      const { data } = await api.put<{ message: string }>('/api/config/user', config);
+      const { data } = await api.put<{ message: string }>('config/user', config);
       return data;
     } catch (error) {
       console.error('Update user config error:', error);

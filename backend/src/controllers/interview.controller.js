@@ -17,7 +17,8 @@ import { sendSuccess, sendPaginated } from '../utils/response.js';
  */
 export const getAllInterviews = async (req, res, next) => {
   try {
-    const { interviewService } = req.scope;
+    console.log('req.container:', req.container);
+    const { interviewService } = req.container.cradle;
     const { page = 1, limit = 10, status, candidateId, search } = req.query;
     
     const result = await interviewService.getAllInterviews({
@@ -50,7 +51,7 @@ export const getAllInterviews = async (req, res, next) => {
  */
 export const getInterviewById = async (req, res, next) => {
   try {
-    const { interviewService } = req.scope;
+    const { interviewService } = req.container.cradle;
     const interview = await interviewService.getInterviewById(req.params.id);
     sendSuccess(res, 200, 'Interview retrieved successfully', interview);
   } catch (error) {
@@ -66,7 +67,8 @@ export const getInterviewById = async (req, res, next) => {
  */
 export const createInterview = async (req, res, next) => {
   try {
-    const { interviewService } = req.scope;
+    console.log('req.container:', req.container); // Debug log
+    const { interviewService } = req.container.cradle;
     const recruiterId = req.user.id; // Get the current user's ID from the JWT
     const interviewData = { ...req.body, recruiterId };
     
@@ -85,7 +87,7 @@ export const createInterview = async (req, res, next) => {
  */
 export const updateInterview = async (req, res, next) => {
   try {
-    const { interviewService } = req.scope;
+    const { interviewService } = req.container.cradle;
     const { id } = req.params;
     const updateData = req.body;
     
@@ -104,7 +106,7 @@ export const updateInterview = async (req, res, next) => {
  */
 export const deleteInterview = async (req, res, next) => {
   try {
-    const { interviewService } = req.scope;
+    const { interviewService } = req.container.cradle;
     await interviewService.deleteInterview(req.params.id);
     sendSuccess(res, 200, 'Interview deleted successfully');
   } catch (error) {
@@ -120,7 +122,7 @@ export const deleteInterview = async (req, res, next) => {
  */
 export const addQuestionsToInterview = async (req, res, next) => {
   try {
-    const { interviewService } = req.scope;
+    const { interviewService } = req.container.cradle;
     const { id } = req.params;
     const { questions } = req.body;
     
@@ -139,7 +141,7 @@ export const addQuestionsToInterview = async (req, res, next) => {
  */
 export const removeQuestionFromInterview = async (req, res, next) => {
   try {
-    const { interviewService } = req.scope;
+    const { interviewService } = req.container.cradle;
     const { id, questionId } = req.params;
     
     await interviewService.removeQuestionFromInterview(id, questionId);

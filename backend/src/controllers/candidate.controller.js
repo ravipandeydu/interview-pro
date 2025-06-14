@@ -49,7 +49,7 @@ import { sendSuccess, sendPaginated } from '../utils/response.js';
  */
 export const getAllCandidates = async (req, res, next) => {
   try {
-    const { candidateService } = req.scope;
+    const { candidateService } = req.container.cradle;
     const { page = 1, limit = 10, status, search } = req.query;
     
     const result = await candidateService.getAllCandidates({
@@ -98,7 +98,7 @@ export const getAllCandidates = async (req, res, next) => {
  */
 export const getCandidateById = async (req, res, next) => {
   try {
-    const { candidateService } = req.scope;
+    const { candidateService } = req.container.cradle;
     const candidate = await candidateService.getCandidateById(req.params.id);
     sendSuccess(res, 200, 'Candidate retrieved successfully', candidate);
   } catch (error) {
@@ -169,7 +169,7 @@ export const getCandidateById = async (req, res, next) => {
  */
 export const createCandidate = async (req, res, next) => {
   try {
-    const { candidateService } = req.scope;
+    const { candidateService } = req.container.cradle;
     const userId = req.user.id; // Get the current user's ID from the JWT
     const candidateData = { ...req.body, userId };
     
@@ -248,7 +248,7 @@ export const createCandidate = async (req, res, next) => {
  */
 export const updateCandidate = async (req, res, next) => {
   try {
-    const { candidateService } = req.scope;
+    const { candidateService } = req.container.cradle;
     const { id } = req.params;
     const updateData = req.body;
     
@@ -284,7 +284,7 @@ export const updateCandidate = async (req, res, next) => {
  */
 export const deleteCandidate = async (req, res, next) => {
   try {
-    const { candidateService } = req.scope;
+    const { candidateService } = req.container.cradle;
     await candidateService.deleteCandidate(req.params.id);
     sendSuccess(res, 200, 'Candidate deleted successfully');
   } catch (error) {

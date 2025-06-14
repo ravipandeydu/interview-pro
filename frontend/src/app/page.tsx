@@ -4,42 +4,43 @@ import React from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
-import { CheckCircle, Code, Database, Palette, Shield, Zap } from 'lucide-react'
+import { CheckCircle, Code, Users, VideoIcon, ClipboardCheck, Brain, Shield, Zap } from 'lucide-react'
 import { useStore } from '../store/useStore'
+import Link from 'next/link'
 
 export default function Home() {
   const { enableAuth, enableChat } = useStore()
 
   const features = [
     {
-      icon: <Zap className="h-6 w-6" />,
-      title: 'Next.js 15.3.3 + React 19',
-      description: 'Latest Next.js with App Router and Turbopack for blazing fast development'
+      icon: <VideoIcon className="h-6 w-6" />,
+      title: 'Virtual Interviews',
+      description: 'Conduct seamless video interviews with candidates from anywhere in the world'
     },
     {
       icon: <Code className="h-6 w-6" />,
-      title: 'TypeScript + ESLint',
-      description: 'Full type safety with modern linting and code formatting'
+      title: 'Technical Assessments',
+      description: 'Evaluate coding skills with real-time collaborative coding environments'
     },
     {
-      icon: <Palette className="h-6 w-6" />,
-      title: 'Tailwind CSS + shadcn/ui',
-      description: 'Beautiful, accessible components with utility-first CSS'
+      icon: <ClipboardCheck className="h-6 w-6" />,
+      title: 'Structured Evaluation',
+      description: 'Standardized scoring and feedback templates for objective candidate assessment'
     },
     {
-      icon: <Database className="h-6 w-6" />,
-      title: 'TanStack Query + Zustand',
-      description: 'Powerful state management and server state synchronization'
+      icon: <Brain className="h-6 w-6" />,
+      title: 'AI-Powered Insights',
+      description: 'Get intelligent analysis and recommendations for candidate performance'
     },
     {
       icon: <Shield className="h-6 w-6" />,
-      title: 'Authentication Ready',
-      description: 'Complete auth flow with protected routes and user management'
+      title: 'Secure & Compliant',
+      description: 'Enterprise-grade security with role-based access control and data protection'
     },
     {
-      icon: <CheckCircle className="h-6 w-6" />,
-      title: 'Production Ready',
-      description: 'Best practices, error handling, and performance optimizations'
+      icon: <Users className="h-6 w-6" />,
+      title: 'Collaborative Hiring',
+      description: 'Involve multiple team members in the interview process with shared feedback'
     }
   ]
 
@@ -49,29 +50,34 @@ export default function Home() {
       <div className="text-center space-y-6 mb-12">
         <div className="space-y-2">
           <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
-            Next.js Starter
+            InterviewPro
           </h1>
           <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl dark:text-gray-400">
-            Production-grade Next.js 15.3.3 + React 19 frontend starter with TypeScript, ESLint, Tailwind CSS, and shadcn/ui
+            A comprehensive platform for managing technical recruitment interviews, coding assessments, and candidate evaluations
           </p>
         </div>
         
         <div className="flex flex-wrap justify-center gap-2">
-          <Badge variant="secondary">Next.js 15.3.3</Badge>
-          <Badge variant="secondary">React 19</Badge>
-          <Badge variant="secondary">TypeScript</Badge>
-          <Badge variant="secondary">Tailwind CSS</Badge>
-          <Badge variant="secondary">shadcn/ui</Badge>
-          <Badge variant="secondary">TanStack Query</Badge>
-          <Badge variant="secondary">Zustand</Badge>
+          <Badge variant="secondary">Video Interviews</Badge>
+          <Badge variant="secondary">Technical Assessments</Badge>
+          <Badge variant="secondary">Candidate Tracking</Badge>
+          <Badge variant="secondary">AI Analysis</Badge>
+          <Badge variant="secondary">Collaborative Hiring</Badge>
+          <Badge variant="secondary">Secure & Compliant</Badge>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button size="lg">
-            Get Started
-          </Button>
-          <Button variant="outline" size="lg">
-            View Documentation
+          {enableAuth ? (
+            <Button size="lg" asChild>
+              <Link href="/dashboard">Go to Dashboard</Link>
+            </Button>
+          ) : (
+            <Button size="lg" asChild>
+              <Link href="/register">Get Started</Link>
+            </Button>
+          )}
+          <Button variant="outline" size="lg" asChild>
+            <Link href="/about">Learn More</Link>
           </Button>
         </div>
       </div>
@@ -80,9 +86,9 @@ export default function Home() {
       <div className="mb-12">
         <Card>
           <CardHeader>
-            <CardTitle>Configuration Status</CardTitle>
+            <CardTitle>Platform Status</CardTitle>
             <CardDescription>
-              Current feature flags and environment configuration
+              Current feature availability and system status
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -96,7 +102,7 @@ export default function Home() {
               <div className="flex items-center space-x-2">
                 <CheckCircle className={`h-5 w-5 ${enableChat ? 'text-green-500' : 'text-gray-400'}`} />
                 <span className={enableChat ? 'text-foreground' : 'text-muted-foreground'}>
-                  Chat Features: {enableChat ? 'Enabled' : 'Disabled'}
+                  AI Assistant: {enableChat ? 'Enabled' : 'Disabled'}
                 </span>
               </div>
             </div>
@@ -123,31 +129,31 @@ export default function Home() {
         ))}
       </div>
 
-      {/* Quick Start */}
+      {/* How It Works */}
       <Card>
         <CardHeader>
-          <CardTitle>Quick Start</CardTitle>
+          <CardTitle>How It Works</CardTitle>
           <CardDescription>
-            Get up and running with this starter template
+            Streamline your technical recruitment process in three simple steps
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <h4 className="font-semibold">1. Environment Setup</h4>
+            <h4 className="font-semibold">1. Create Interviews</h4>
             <p className="text-sm text-muted-foreground">
-              Configure your environment variables in <code className="bg-muted px-1 py-0.5 rounded">.env.local</code>
+              Set up structured interviews with customized questions, coding challenges, and evaluation criteria
             </p>
           </div>
           <div className="space-y-2">
-            <h4 className="font-semibold">2. Install Dependencies</h4>
+            <h4 className="font-semibold">2. Conduct Assessments</h4>
             <p className="text-sm text-muted-foreground">
-              Run <code className="bg-muted px-1 py-0.5 rounded">npm install --legacy-peer-deps</code> to install all dependencies
+              Host video interviews with integrated coding environments and real-time collaboration tools
             </p>
           </div>
           <div className="space-y-2">
-            <h4 className="font-semibold">3. Start Development</h4>
+            <h4 className="font-semibold">3. Evaluate Candidates</h4>
             <p className="text-sm text-muted-foreground">
-              Run <code className="bg-muted px-1 py-0.5 rounded">npm run dev</code> to start the development server
+              Review performance, generate AI-powered insights, and make data-driven hiring decisions
             </p>
           </div>
         </CardContent>

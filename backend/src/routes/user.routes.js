@@ -20,6 +20,7 @@ import {
   updateProfile,
   uploadAvatar,
   deleteAvatar,
+  searchUsers,
 } from '../controllers/user.controller.js';
 import { uploadSingle } from '../middlewares/upload.middleware.js';
 
@@ -151,6 +152,38 @@ router.post('/me/avatar', uploadSingle('avatar'), uploadAvatar);
  *         description: Avatar deleted successfully
  */
 router.delete('/me/avatar', deleteAvatar);
+
+/**
+ * @swagger
+ * /api/users/search:
+ *   get:
+ *     summary: Search users by name or email
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *         description: Search query (name or email)
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Items per page
+ *     responses:
+ *       200:
+ *         description: List of users matching the search criteria
+ */
+router.get('/search', validate(userSchemas.searchUsers), searchUsers);
 
 // All routes below this middleware require admin role
 router.use(restrictTo('admin'));

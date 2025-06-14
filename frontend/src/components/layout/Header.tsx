@@ -24,11 +24,11 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center">
+      <div className="container mx-auto flex h-14 items-center">
         <div className="mr-4 hidden md:flex">
           <Link href="/" className="mr-6 flex items-center space-x-2">
             <span className="hidden font-bold sm:inline-block">
-              Next.js Starter
+              InterviewPro
             </span>
           </Link>
           <nav className="flex items-center space-x-6 text-sm font-medium">
@@ -37,24 +37,6 @@ export function Header() {
               className="transition-colors hover:text-foreground/80 text-foreground/60"
             >
               Home
-            </Link>
-            <Link
-              href="/about"
-              className="transition-colors hover:text-foreground/80 text-foreground/60"
-            >
-              About
-            </Link>
-            <Link
-              href="/contact"
-              className="transition-colors hover:text-foreground/80 text-foreground/60"
-            >
-              Contact
-            </Link>
-            <Link
-              href="/chat"
-              className="transition-colors hover:text-foreground/80 text-foreground/60"
-            >
-              Chat
             </Link>
             {enableAuth && (
               <>
@@ -67,10 +49,16 @@ export function Header() {
                       Dashboard
                     </Link>
                     <Link
-                      href="/profile"
+                      href="/interviews/new"
                       className="transition-colors hover:text-foreground/80 text-foreground/60"
                     >
-                      Profile
+                      Create Interview
+                    </Link>
+                    <Link
+                      href="/history"
+                      className="transition-colors hover:text-foreground/80 text-foreground/60"
+                    >
+                      Interview History
                     </Link>
                   </>
                 ) : (
@@ -91,6 +79,18 @@ export function Header() {
                 )}
               </>
             )}
+            <Link
+              href="/about"
+              className="transition-colors hover:text-foreground/80 text-foreground/60"
+            >
+              About
+            </Link>
+            <Link
+              href="/contact"
+              className="transition-colors hover:text-foreground/80 text-foreground/60"
+            >
+              Contact
+            </Link>
           </nav>
         </div>
 

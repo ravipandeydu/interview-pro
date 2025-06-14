@@ -249,20 +249,15 @@ const NotificationDropdown: React.FC = () => {
                   )}
                 </TabsTrigger>
               </TabsList>
-              
-              <div className="overflow-y-auto max-h-[50vh]">
-                <TabsContent value="all" className="m-0">
-                  {renderNotificationList(allNotifications)}
-                </TabsContent>
-                
-                <TabsContent value="unread" className="m-0">
-                  {renderNotificationList(unreadNotifications)}
-                </TabsContent>
-                
-                <TabsContent value="read" className="m-0">
-                  {renderNotificationList(readNotifications)}
-                </TabsContent>
-              </div>
+              <TabsContent value="all" className="overflow-y-auto max-h-[50vh]">
+                {renderNotificationList(allNotifications)}
+              </TabsContent>
+              <TabsContent value="unread" className="overflow-y-auto max-h-[50vh]">
+                {renderNotificationList(unreadNotifications)}
+              </TabsContent>
+              <TabsContent value="read" className="overflow-y-auto max-h-[50vh]">
+                {renderNotificationList(readNotifications)}
+              </TabsContent>
             </Tabs>
           </motion.div>
         )}
