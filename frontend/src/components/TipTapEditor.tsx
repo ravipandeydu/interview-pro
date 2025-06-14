@@ -7,6 +7,7 @@ import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
+import { useEffect, useCallback } from 'react';
 import {
   Bold,
   Italic,
@@ -55,7 +56,31 @@ export function TipTapEditor({
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
+    autofocus: true,
   });
+
+  // Update content when prop changes
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+      editor.commands.setContent(content);
+    }
+  }, [content, editor]);
+
+  // Focus the editor when it's initialized
+  useEffect(() => {
+    if (editor) {
+      setTimeout(() => {
+        editor.commands.focus();
+      }, 0);
+    }
+  }, [editor]);
+
+  // Handle click on editor container to focus
+  const handleContainerClick = useCallback(() => {
+    if (editor && editable) {
+      editor.commands.focus();
+    }
+  }, [editor, editable]);
 
   if (!editor) {
     return null;
@@ -87,7 +112,7 @@ export function TipTapEditor({
   };
 
   return (
-    <div className="border rounded-md">
+    <div className="border rounded-md" onClick={handleContainerClick}>
       <div className="flex flex-wrap gap-1 p-1 border-b bg-muted/50">
         <Toggle
           size="sm"

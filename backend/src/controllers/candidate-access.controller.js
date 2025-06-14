@@ -74,21 +74,32 @@ export const getInterviewByAccessToken = async (req, res, next) => {
         id: interview.candidate.id,
         fullName: interview.candidate.fullName,
       },
-      questions: interview.questions.map(iq => ({
-        id: iq.id,
-        order: iq.order,
-        customInstructions: iq.customInstructions,
-        question: {
-          id: iq.question.id,
-          content: iq.question.content,
-          category: iq.question.category,
-          difficulty: iq.question.difficulty,
-        },
-        response: iq.response ? {
-          id: iq.response.id,
-          content: iq.response.content,
-        } : null,
-      })),
+      questions: interview.questions.map(iq => {
+        // Map question category to a type for frontend compatibility
+        let questionType = 'written';
+        if (iq.question.category === 'TECHNICAL' || iq.question.category === 'PROBLEM_SOLVING') {
+          questionType = 'coding';
+        } else if (iq.question.category === 'SITUATIONAL' || iq.question.category === 'CULTURAL_FIT') {
+          questionType = 'multiple-choice';
+        }
+        
+        return {
+          id: iq.id,
+          order: iq.order,
+          customInstructions: iq.customInstructions,
+          type: questionType, // Add type field for frontend
+          question: {
+            id: iq.question.id,
+            content: iq.question.content,
+            category: iq.question.category,
+            difficulty: iq.question.difficulty,
+          },
+          response: iq.response ? {
+            id: iq.response.id,
+            content: iq.response.content,
+          } : null,
+        };
+      }),
     };
 
     sendSuccess(res, 200, 'Interview retrieved successfully', responseData);

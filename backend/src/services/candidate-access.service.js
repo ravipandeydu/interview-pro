@@ -152,6 +152,21 @@ const sendInterviewInvitation = async (prisma, interviewId) => {
  * @param {string} accessToken - The access token to validate
  * @returns {Promise<Object>} The interview if token is valid
  */
+/**
+ * Map question category to frontend type
+ * @param {string} category - Question category
+ * @returns {string} Frontend question type
+ */
+const mapCategoryToType = (category) => {
+  if (category === 'TECHNICAL' || category === 'PROBLEM_SOLVING') {
+    return 'coding';
+  } else if (category === 'SITUATIONAL' || category === 'CULTURAL_FIT') {
+    return 'multiple-choice';
+  } else {
+    return 'written';
+  }
+};
+
 const validateAccessToken = async (prisma, accessToken) => {
   if (!accessToken) {
     throw new UnauthorizedError('Access token is required');
@@ -181,6 +196,14 @@ const validateAccessToken = async (prisma, accessToken) => {
   // Check if token has expired
   if (interview.accessTokenExpires && new Date() > new Date(interview.accessTokenExpires)) {
     throw new UnauthorizedError('Access token has expired');
+  }
+
+  // Add type field to questions for frontend compatibility
+  if (interview.questions) {
+    interview.questions = interview.questions.map(iq => ({
+      ...iq,
+      type: mapCategoryToType(iq.question.category)
+    }));
   }
 
   return interview;

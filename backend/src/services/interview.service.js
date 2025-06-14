@@ -100,6 +100,21 @@ export const getAllInterviews = async ({ page = 1, limit = 10, status, candidate
  * @param {string} id - Interview ID
  * @returns {Object} Interview object
  */
+/**
+ * Map question category to frontend type
+ * @param {string} category - Question category
+ * @returns {string} Frontend question type
+ */
+const mapCategoryToType = (category) => {
+  if (category === 'TECHNICAL' || category === 'PROBLEM_SOLVING') {
+    return 'coding';
+  } else if (category === 'SITUATIONAL' || category === 'CULTURAL_FIT') {
+    return 'multiple-choice';
+  } else {
+    return 'written';
+  }
+};
+
 export const getInterviewById = async (id) => {
   const interview = await prisma.interview.findUnique({
     where: { id },
@@ -138,6 +153,14 @@ export const getInterviewById = async (id) => {
 
   if (!interview) {
     throw new ApiError('Interview not found', 404);
+  }
+  
+  // Add type field to questions for frontend compatibility
+  if (interview.questions) {
+    interview.questions = interview.questions.map(iq => ({
+      ...iq,
+      type: mapCategoryToType(iq.question.category)
+    }));
   }
 
   return interview;
@@ -201,7 +224,7 @@ export const createInterview = async (interviewData) => {
     }
 
     // Return the created interview with related data
-    return await prisma.interview.findUnique({
+    const createdInterview = await prisma.interview.findUnique({
       where: { id: interview.id },
       include: {
         candidate: {
@@ -228,6 +251,16 @@ export const createInterview = async (interviewData) => {
         },
       },
     });
+    
+    // Add type field to questions for frontend compatibility
+    if (createdInterview.questions) {
+      createdInterview.questions = createdInterview.questions.map(iq => ({
+        ...iq,
+        type: mapCategoryToType(iq.question.category)
+      }));
+    }
+    
+    return createdInterview;
   });
 };
 
@@ -276,6 +309,14 @@ export const updateInterview = async (id, updateData) => {
       },
     },
   });
+
+  // Add type field to questions for frontend compatibility
+  if (updatedInterview.questions) {
+    updatedInterview.questions = updatedInterview.questions.map(iq => ({
+      ...iq,
+      type: mapCategoryToType(iq.question.category)
+    }));
+  }
 
   return updatedInterview;
 };
@@ -381,7 +422,7 @@ export const addQuestionsToInterview = async (id, questions) => {
   );
 
   // Return the updated interview
-  return await prisma.interview.findUnique({
+  const updatedInterview = await prisma.interview.findUnique({
     where: { id },
     include: {
       candidate: {
@@ -408,6 +449,16 @@ export const addQuestionsToInterview = async (id, questions) => {
       },
     },
   });
+  
+  // Add type field to questions for frontend compatibility
+  if (updatedInterview.questions) {
+    updatedInterview.questions = updatedInterview.questions.map(iq => ({
+      ...iq,
+      type: mapCategoryToType(iq.question.category)
+    }));
+  }
+  
+  return updatedInterview;
 };
 
 /**

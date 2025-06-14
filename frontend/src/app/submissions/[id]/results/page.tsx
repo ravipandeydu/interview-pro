@@ -196,7 +196,7 @@ export default function SubmissionResultsPage() {
                           </div>
                           <div className="flex-1">
                             <div className="flex justify-between">
-                              <h4 className="font-medium">{question.title}</h4>
+                              <h4 className="font-medium">{question.question.content}</h4>
                               <Badge>{question.type}</Badge>
                             </div>
                             <p className="text-sm text-muted-foreground mt-1">

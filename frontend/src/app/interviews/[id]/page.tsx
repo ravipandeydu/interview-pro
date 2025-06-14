@@ -129,7 +129,7 @@ export default function InterviewDetailsPage() {
   console.log(interview, "interview")
   
   return (
-    <div className="container py-10">
+    <div className="container mx-auto py-10">
       <div className="flex justify-between items-start mb-6">
         <div>
           <h1 className="text-3xl font-bold">{interview.title}</h1>

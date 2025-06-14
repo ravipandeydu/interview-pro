@@ -47,7 +47,7 @@ export default function InterviewJoinPage() {
           toast.success('Successfully joined the interview');
           // Initialize timer for the first question
           if (interview.questions.length > 0) {
-            startTimer(interview.questions[0].timeLimit);
+            startTimer(interview.duration);
           }
         },
         onError: (error) => {
@@ -108,18 +108,22 @@ export default function InterviewJoinPage() {
 
   // Handle question change
   const handleQuestionChange = (index: number) => {
-    // Submit current answer before changing
-    handleSubmitAnswer();
-    
     // Change to new question
     setActiveQuestionIndex(index);
     
     // Reset state for new question
     const newQuestion = interview?.questions[index];
     if (newQuestion) {
-      setCode(newQuestion.codeTemplate || '');
-      setWrittenAnswer('');
-      startTimer(newQuestion.timeLimit);
+      // Set appropriate initial content based on question type
+      if (newQuestion.type === 'coding') {
+        setCode(newQuestion.codeTemplate || '');
+      } else if (newQuestion.type === 'written') {
+        // Use existing response if available, otherwise empty string
+        setWrittenAnswer(newQuestion.response?.answer || '');
+      }
+      
+      // Start timer for the new question
+      // startTimer(newQuestion.timeLimit);
     }
   };
 
@@ -154,7 +158,24 @@ export default function InterviewJoinPage() {
       
       // Move to next question if available
       if (activeQuestionIndex < interview.questions.length - 1) {
-        handleQuestionChange(activeQuestionIndex + 1);
+        // Update question index
+        const nextIndex = activeQuestionIndex + 1;
+        setActiveQuestionIndex(nextIndex);
+        
+        // Reset state for new question
+        const newQuestion = interview?.questions[nextIndex];
+        if (newQuestion) {
+          // Set appropriate initial content based on question type
+          if (newQuestion.type === 'coding') {
+            setCode(newQuestion.codeTemplate || '');
+          } else if (newQuestion.type === 'written') {
+            // Use existing response if available, otherwise empty string
+            setWrittenAnswer(newQuestion.response?.answer || '');
+          }
+          
+          // Start timer for the new question
+          // startTimer(newQuestion.timeLimit);
+        }
       } else {
         // All questions completed
         toast.success('Interview completed! Redirecting to results...');
@@ -232,10 +253,10 @@ export default function InterviewJoinPage() {
                     onClick={() => handleQuestionChange(index)}
                   >
                     <span className="mr-2">{index + 1}.</span>
-                    <span className="truncate">{question.title}</span>
+                    <span className="truncate">{question.question.content}</span>
                     <Badge 
                       variant="outline" 
-                      className={`ml-auto ${index === activeQuestionIndex ? 'bg-white/20' : ''}`}
+                      className={`ml-auto ${index === activeQuestionIndex ? 'bg-white/80' : ''}`}
                     >
                       {question.type}
                     </Badge>
