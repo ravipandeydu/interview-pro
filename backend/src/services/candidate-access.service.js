@@ -79,7 +79,7 @@ const sendInterviewInvitation = async (prisma, interviewId) => {
   }
 
   // Create the interview access URL
-  const interviewAccessUrl = `${config.frontend.url}/interview/access/${interview.accessToken}`;
+  const interviewAccessUrl = `${config.frontend.url}/interview/${interview.accessToken}`;
 
   // Send the email
   await emailService.sendEmail({
