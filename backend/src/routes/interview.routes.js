@@ -360,4 +360,37 @@ router.get('/:id/submissions', authenticate, authorize(['RECRUITER', 'ADMIN']), 
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/interviews/{id}/pdf:
+ *   post:
+ *     summary: Generate PDF report for an interview
+ *     tags: [Interviews]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Interview ID
+ *     responses:
+ *       200:
+ *         description: PDF report generated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 url:
+ *                   type: string
+ *                   description: URL to access the generated PDF
+ *       404:
+ *         description: Interview not found
+ *       403:
+ *         description: Forbidden - requires recruiter or admin role
+ */
+router.post('/:id/pdf', authenticate, authorize(['RECRUITER', 'ADMIN']), interviewController.generatePdfReport);
+
 export default router;
