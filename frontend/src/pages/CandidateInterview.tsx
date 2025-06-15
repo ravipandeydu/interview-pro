@@ -461,7 +461,10 @@ export const CandidateInterview = ({ token }: CandidateInterviewProps) => {
                   Next
                 </Button>
               ) : (
-                <Button onClick={() => setConfirmDialogOpen(true)}>
+                <Button onClick={async () => {
+                  await handleQuestionSubmit();
+                  setConfirmDialogOpen(true)
+                  }}>
                   Complete Interview
                 </Button>
               )}

@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { Editor } from '@monaco-editor/react';
 import { TipTapEditor } from '@/components/TipTapEditor';
 import { Submission } from '@/services/interviewService';
-import { CheckCircle, XCircle, AlertCircle, Download, FileText } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, Download, FileText, ActivitySquare, ShieldCheck, Lock, Gauge } from 'lucide-react';
 
 export default function SubmissionResultsPage() {
   const router = useRouter();
@@ -30,7 +30,7 @@ export default function SubmissionResultsPage() {
   const { data: submissions, isLoading: isLoadingSubmissions } = useInterviewSubmissions(id as string);
   
   // PDF generation
-  const { generatePdfReport, isGeneratingPdfReport } = useSubmissionOperations();
+  const { generatePdfReport, isGeneratingPdfReport, analyzeSubmission, isAnalyzingSubmission } = useSubmissionOperations();
   
   // Handle PDF download
   const handleDownloadPdf = () => {
@@ -45,6 +45,19 @@ export default function SubmissionResultsPage() {
       onError: (error) => {
         toast.error('Failed to generate PDF report');
         console.error('Generate PDF error:', error);
+      },
+    });
+  };
+
+  // Handle submission analysis
+  const handleAnalyzeSubmission = (submissionId: string) => {
+    analyzeSubmission(submissionId, {
+      onSuccess: () => {
+        toast.success('Submission analyzed successfully');
+      },
+      onError: (error) => {
+        toast.error('Failed to analyze submission');
+        console.error('Analyze submission error:', error);
       },
     });
   };
@@ -344,6 +357,19 @@ export default function SubmissionResultsPage() {
                           </div>
                         </div>
                       )}
+                      
+                      {/* AI Analysis Button */}
+                      {!submission.aiAnalysis && (
+                        <div className="mt-4">
+                          <Button 
+                            onClick={() => handleAnalyzeSubmission(submission.id)}
+                            className="w-full"
+                            disabled={isAnalyzingSubmission}
+                          >
+                            {isAnalyzingSubmission ? 'Analyzing...' : 'Analyze with AI'}
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -414,6 +440,93 @@ export default function SubmissionResultsPage() {
                             ))}
                           </ul>
                         </div>
+                        
+                        {/* Code Quality Metrics - Only shown for coding questions */}
+                        {question?.type === 'coding' && submission.aiAnalysis.codeQualityMetrics && (
+                          <div>
+                            <h4 className="font-medium mb-2 text-purple-600">Code Quality Metrics</h4>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                              <div className="border rounded-md p-3 bg-purple-50">
+                                <div className="text-sm text-muted-foreground">Maintainability</div>
+                                <div className="flex items-center justify-between mt-1">
+                                  <span className="text-lg font-semibold">
+                                    {submission.aiAnalysis.codeQualityMetrics.maintainability}/100
+                                  </span>
+                                  <ActivitySquare className="h-5 w-5 text-purple-500" />
+                                </div>
+                              </div>
+                              <div className="border rounded-md p-3 bg-blue-50">
+                                <div className="text-sm text-muted-foreground">Reliability</div>
+                                <div className="flex items-center justify-between mt-1">
+                                  <span className="text-lg font-semibold">
+                                    {submission.aiAnalysis.codeQualityMetrics.reliability}/100
+                                  </span>
+                                  <ShieldCheck className="h-5 w-5 text-blue-500" />
+                                </div>
+                              </div>
+                              <div className="border rounded-md p-3 bg-red-50">
+                                <div className="text-sm text-muted-foreground">Security</div>
+                                <div className="flex items-center justify-between mt-1">
+                                  <span className="text-lg font-semibold">
+                                    {submission.aiAnalysis.codeQualityMetrics.security}/100
+                                  </span>
+                                  <Lock className="h-5 w-5 text-red-500" />
+                                </div>
+                              </div>
+                              <div className="border rounded-md p-3 bg-green-50">
+                                <div className="text-sm text-muted-foreground">Performance</div>
+                                <div className="flex items-center justify-between mt-1">
+                                  <span className="text-lg font-semibold">
+                                    {submission.aiAnalysis.codeQualityMetrics.performance}/100
+                                  </span>
+                                  <Gauge className="h-5 w-5 text-green-500" />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Code Quality Details - Only shown for coding questions */}
+                        {question?.type === 'coding' && submission.aiAnalysis.codeQualityDetails && (
+                          <div className="space-y-4">
+                            <div>
+                              <h4 className="font-medium mb-2 text-indigo-600">Static Analysis</h4>
+                              <ul className="list-disc pl-5 space-y-1">
+                                {submission.aiAnalysis.codeQualityDetails.staticAnalysis.map((finding, index) => (
+                                  <li key={index}>{finding}</li>
+                                ))}
+                              </ul>
+                            </div>
+                            
+                            <div>
+                              <h4 className="font-medium mb-2 text-emerald-600">Best Practices</h4>
+                              <ul className="list-disc pl-5 space-y-1">
+                                {submission.aiAnalysis.codeQualityDetails.bestPractices.map((practice, index) => (
+                                  <li key={index}>{practice}</li>
+                                ))}
+                              </ul>
+                            </div>
+                            
+                            <div>
+                              <h4 className="font-medium mb-2 text-amber-600">Performance Issues</h4>
+                              <ul className="list-disc pl-5 space-y-1">
+                                {submission.aiAnalysis.codeQualityDetails.performanceIssues.map((issue, index) => (
+                                  <li key={index}>{issue}</li>
+                                ))}
+                              </ul>
+                            </div>
+                            
+                            <div>
+                              <h4 className="font-medium mb-2 text-rose-600">Security Vulnerabilities</h4>
+                              <ul className="list-disc pl-5 space-y-1">
+                                {submission.aiAnalysis.codeQualityDetails.securityVulnerabilities.map((vulnerability, index) => (
+                                  <li key={index}>{vulnerability}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        )}
+                        
                         
                         {submission.plagiarismReport && (
                           <div>

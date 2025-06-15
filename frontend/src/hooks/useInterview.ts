@@ -206,6 +206,20 @@ export function useSubmissionOperations() {
     },
   });
 
+  // Analyze submission mutation
+  const analyzeSubmissionMutation = useMutation({
+    mutationFn: InterviewService.analyzeSubmission,
+    onSuccess: (submission) => {
+      // Update the submission in the cache
+      queryClient.setQueryData(interviewKeys.submission(submission.id), submission);
+      // Invalidate submissions for this interview
+      queryClient.invalidateQueries({ queryKey: interviewKeys.submissions(submission.interviewId) });
+    },
+    onError: (error) => {
+      console.error('Analyze submission failed:', error);
+    },
+  });
+
   return {
     // Submit answer
     submitAnswer: submitAnswerMutation.mutate,
@@ -218,6 +232,12 @@ export function useSubmissionOperations() {
     generatePdfReportAsync: generatePdfReportMutation.mutateAsync,
     isGeneratingPdfReport: generatePdfReportMutation.isPending,
     generatePdfReportError: generatePdfReportMutation.error,
+
+    // Analyze submission
+    analyzeSubmission: analyzeSubmissionMutation.mutate,
+    analyzeSubmissionAsync: analyzeSubmissionMutation.mutateAsync,
+    isAnalyzingSubmission: analyzeSubmissionMutation.isPending,
+    analyzeSubmissionError: analyzeSubmissionMutation.error,
   };
 }
 

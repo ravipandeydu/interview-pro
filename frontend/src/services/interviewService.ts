@@ -51,6 +51,33 @@ export interface Submission {
       error?: string;
     }[];
   };
+  aiAnalysis?: {
+    score: number;
+    feedback: string;
+    strengths: string[];
+    weaknesses: string[];
+    suggestions: string[];
+    codeQualityMetrics?: {
+      maintainability: number;
+      reliability: number;
+      security: number;
+      performance: number;
+    };
+    codeQualityDetails?: {
+      staticAnalysis: string[];
+      bestPractices: string[];
+      performanceIssues: string[];
+      securityVulnerabilities: string[];
+    };
+  };
+  plagiarismReport?: {
+    score: number;
+    matches: {
+      source: string;
+      similarity: number;
+      matchedText: string;
+    }[];
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -290,6 +317,21 @@ export class InterviewService {
       return data.data;
     } catch (error) {
       console.error('Add questions to interview error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Analyze a submission with AI
+   * @param submissionId Submission ID to analyze
+   * @returns Updated submission with AI analysis
+   */
+  static async analyzeSubmission(submissionId: string): Promise<Submission> {
+    try {
+      const { data } = await api.post(`submissions/${submissionId}/analyze`);
+      return data.data;
+    } catch (error) {
+      console.error('Analyze submission error:', error);
       throw error;
     }
   }

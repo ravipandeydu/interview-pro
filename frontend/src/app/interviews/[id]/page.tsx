@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Calendar, Clock, User, FileText, Edit, Trash2, Share2, Copy, Plus, X } from 'lucide-react';
+import { Calendar, Clock, User, FileText, Edit, Trash2, Share2, Copy, Plus, X, ActivitySquare, ShieldCheck, Lock, Gauge } from 'lucide-react';
 import { QuestionSelector } from '@/components/questions/QuestionSelector';
 import { InterviewNotes } from '@/components/interviews/InterviewNotes';
 import { format } from 'date-fns';
@@ -362,25 +362,195 @@ export default function InterviewDetailsPage() {
                   <p className="text-muted-foreground">Loading submissions...</p>
                 ) : submissions && submissions.length > 0 ? (
                   <div className="space-y-4">
-                    {submissions.map((submission) => (
-                      <div key={submission.id} className="border rounded-md p-4">
-                        <div className="flex justify-between items-start">
-                          <h3 className="font-medium">
-                            {interview.questions?.find(q => q.id === submission.questionId)?.title || 'Unknown Question'}
-                          </h3>
-                          <Badge>{submission.status}</Badge>
+                    {submissions.map((submission) => {
+                      const question = interview.questions?.find(q => q.id === submission.questionId);
+                      return (
+                        <div key={submission.id} className="border rounded-md p-4">
+                          <div className="flex justify-between items-start">
+                            <h3 className="font-medium">
+                              {question?.title || 'Unknown Question'}
+                            </h3>
+                            <Badge>{submission.status}</Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Submitted: {new Date(submission.createdAt).toLocaleString()}
+                          </p>
+                          <div className="mt-2">
+                            <h4 className="text-sm font-medium">Answer:</h4>
+                            <pre className="mt-1 p-2 bg-muted rounded-md overflow-x-auto">
+                              {submission.answer}
+                            </pre>
+                          </div>
+                          
+                          {/* AI Analysis Section */}
+                          {submission.aiAnalysis && (
+                            <div className="mt-4 space-y-4">
+                              <Separator />
+                              <div>
+                                <h4 className="text-sm font-medium">AI Analysis</h4>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-sm">Score:</span>
+                                  <span className={`${submission.aiAnalysis.score >= 80 ? 'text-green-500' : submission.aiAnalysis.score >= 60 ? 'text-yellow-500' : 'text-red-500'}`}>
+                                    {submission.aiAnalysis.score}/100
+                                  </span>
+                                </div>
+                                <p className="mt-2 text-sm">{submission.aiAnalysis.feedback}</p>
+                              </div>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <h4 className="text-sm font-medium text-green-600">Strengths</h4>
+                                  <ul className="list-disc pl-5 space-y-1 text-sm">
+                                    {submission.aiAnalysis.strengths.map((strength, index) => (
+                                      <li key={index}>{strength}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                                
+                                <div>
+                                  <h4 className="text-sm font-medium text-red-600">Areas for Improvement</h4>
+                                  <ul className="list-disc pl-5 space-y-1 text-sm">
+                                    {submission.aiAnalysis.weaknesses.map((weakness, index) => (
+                                      <li key={index}>{weakness}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </div>
+                              
+                              {submission.aiAnalysis.suggestions && submission.aiAnalysis.suggestions.length > 0 && (
+                                <div>
+                                  <h4 className="text-sm font-medium text-blue-600">Suggestions</h4>
+                                  <ul className="list-disc pl-5 space-y-1 text-sm">
+                                    {submission.aiAnalysis.suggestions.map((suggestion, index) => (
+                                      <li key={index}>{suggestion}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              
+                              {/* Code Quality Metrics - Only shown for coding questions */}
+                              {question?.type === 'coding' && submission.aiAnalysis.codeQualityMetrics && (
+                                <div>
+                                  <h4 className="text-sm font-medium text-purple-600">Code Quality Metrics</h4>
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+                                    <div className="border rounded-md p-3 bg-purple-50">
+                                      <div className="text-xs text-muted-foreground">Maintainability</div>
+                                      <div className="flex items-center justify-between mt-1">
+                                        <span className="text-sm font-semibold">
+                                          {submission.aiAnalysis.codeQualityMetrics.maintainability}/100
+                                        </span>
+                                        <ActivitySquare className="h-4 w-4 text-purple-500" />
+                                      </div>
+                                    </div>
+                                    <div className="border rounded-md p-3 bg-blue-50">
+                                      <div className="text-xs text-muted-foreground">Reliability</div>
+                                      <div className="flex items-center justify-between mt-1">
+                                        <span className="text-sm font-semibold">
+                                          {submission.aiAnalysis.codeQualityMetrics.reliability}/100
+                                        </span>
+                                        <ShieldCheck className="h-4 w-4 text-blue-500" />
+                                      </div>
+                                    </div>
+                                    <div className="border rounded-md p-3 bg-red-50">
+                                      <div className="text-xs text-muted-foreground">Security</div>
+                                      <div className="flex items-center justify-between mt-1">
+                                        <span className="text-sm font-semibold">
+                                          {submission.aiAnalysis.codeQualityMetrics.security}/100
+                                        </span>
+                                        <Lock className="h-4 w-4 text-red-500" />
+                                      </div>
+                                    </div>
+                                    <div className="border rounded-md p-3 bg-green-50">
+                                      <div className="text-xs text-muted-foreground">Performance</div>
+                                      <div className="flex items-center justify-between mt-1">
+                                        <span className="text-sm font-semibold">
+                                          {submission.aiAnalysis.codeQualityMetrics.performance}/100
+                                        </span>
+                                        <Gauge className="h-4 w-4 text-green-500" />
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Code Quality Details - Only shown for coding questions */}
+                              {question?.type === 'coding' && submission.aiAnalysis.codeQualityDetails && (
+                                <div className="space-y-3">
+                                  <div>
+                                    <h4 className="text-sm font-medium text-indigo-600">Static Analysis</h4>
+                                    <ul className="list-disc pl-5 space-y-1 text-xs">
+                                      {submission.aiAnalysis.codeQualityDetails.staticAnalysis.map((finding, index) => (
+                                        <li key={index}>{finding}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                  
+                                  <div>
+                                    <h4 className="text-sm font-medium text-emerald-600">Best Practices</h4>
+                                    <ul className="list-disc pl-5 space-y-1 text-xs">
+                                      {submission.aiAnalysis.codeQualityDetails.bestPractices.map((practice, index) => (
+                                        <li key={index}>{practice}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                  
+                                  <div>
+                                    <h4 className="text-sm font-medium text-amber-600">Performance Issues</h4>
+                                    <ul className="list-disc pl-5 space-y-1 text-xs">
+                                      {submission.aiAnalysis.codeQualityDetails.performanceIssues.map((issue, index) => (
+                                        <li key={index}>{issue}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                  
+                                  <div>
+                                    <h4 className="text-sm font-medium text-rose-600">Security Vulnerabilities</h4>
+                                    <ul className="list-disc pl-5 space-y-1 text-xs">
+                                      {submission.aiAnalysis.codeQualityDetails.securityVulnerabilities.map((vulnerability, index) => (
+                                        <li key={index}>{vulnerability}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Plagiarism Report */}
+                              {submission.plagiarismReport && (
+                                <div>
+                                  <h4 className="text-sm font-medium text-amber-600">Plagiarism Report</h4>
+                                  <div className="border rounded-md p-3 bg-amber-50 mt-2">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <span className="text-xs font-medium">Similarity Score:</span>
+                                      <span className={`text-xs ${submission.plagiarismReport.score > 30 ? 'text-red-500' : 'text-green-500'}`}>
+                                        {submission.plagiarismReport.score}%
+                                      </span>
+                                    </div>
+                                    
+                                    {submission.plagiarismReport.matches.length > 0 ? (
+                                      <div>
+                                        <h5 className="text-xs font-medium mb-1">Matches Found:</h5>
+                                        <div className="space-y-2">
+                                          {submission.plagiarismReport.matches.map((match, index) => (
+                                            <div key={index} className="border rounded-md p-2">
+                                              <div className="flex justify-between items-center">
+                                                <span className="text-xs font-medium">{match.source}</span>
+                                                <Badge variant="outline" className="text-xs">{match.similarity}% similar</Badge>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <p className="text-xs">No significant matches found.</p>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Submitted: {new Date(submission.createdAt).toLocaleString()}
-                        </p>
-                        <div className="mt-2">
-                          <h4 className="text-sm font-medium">Answer:</h4>
-                          <pre className="mt-1 p-2 bg-muted rounded-md overflow-x-auto">
-                            {submission.answer}
-                          </pre>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <p className="text-muted-foreground">No submissions yet</p>

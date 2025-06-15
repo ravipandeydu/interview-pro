@@ -11,6 +11,7 @@ import express from 'express';
 import { authenticate } from '../middlewares/auth.middleware.js';
 import { authorize } from '../middlewares/role.middleware.js';
 import * as interviewController from '../controllers/interview.controller.js';
+import { sendSuccess } from '../utils/response.js';
 
 const router = express.Router();
 
@@ -325,5 +326,38 @@ router.delete('/:id/questions/:questionId', authenticate, authorize(['RECRUITER'
  *         description: Forbidden - requires recruiter or admin role
  */
 router.post('/:id/join', authenticate, authorize(['RECRUITER', 'ADMIN']), interviewController.joinInterview);
+
+/**
+ * @swagger
+ * /api/v1/interviews/{id}/submissions:
+ *   get:
+ *     summary: Get all submissions for an interview
+ *     tags: [Interviews]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Interview ID
+ *     responses:
+ *       200:
+ *         description: List of submissions for the interview
+ *       404:
+ *         description: Interview not found
+ *       403:
+ *         description: Forbidden - requires recruiter or admin role
+ */
+router.get('/:id/submissions', authenticate, authorize(['RECRUITER', 'ADMIN']), async (req, res, next) => {
+  try {
+    const { responseService } = req.container.cradle;
+    const responses = await responseService.getResponsesByInterviewId(req.params.id);
+    sendSuccess(res, 200, 'Submissions retrieved successfully', responses);
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default router;

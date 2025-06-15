@@ -355,6 +355,7 @@ Format the response as a valid JSON array of objects with the following structur
  */
 export async function analyzeResponse({ question, responseContent }) {
   ensureApiKey();
+  console.log('analyzeResponse', { question, responseContent });
   try {
     // Validate input
     if (!question || !question.content) {
@@ -365,8 +366,61 @@ export async function analyzeResponse({ question, responseContent }) {
       throw new ApiError('Response content is required', 400);
     }
 
-    // Prepare prompt for OpenAI
-    const prompt = `You are an expert interviewer evaluating a candidate's response to the following interview question:
+    // Check if this is a coding question
+    const isCodingQuestion = question.category === 'TECHNICAL' || question.category === 'PROBLEM_SOLVING';
+    
+    // Use different prompts based on question type
+    let prompt;
+    
+    if (isCodingQuestion) {
+      // For coding questions, use code quality analysis
+      prompt = `You are an expert software engineer evaluating a candidate's code submission for the following interview question:
+
+Question: ${question.content}
+Category: ${question.category}
+Difficulty: ${question.difficulty}
+Expected Answer: ${question.expectedAnswer || 'Not provided'}
+
+Candidate's Code Submission:
+\`\`\`
+${responseContent}
+\`\`\`
+
+Please perform a comprehensive code quality analysis and provide:
+1. A score from 0 to 100 based on overall code quality and correctness
+2. Detailed feedback on the code's strengths and weaknesses
+3. Specific suggestions for improvement
+4. Code quality metrics analysis covering:
+   - Static code analysis (syntax, structure, organization)
+   - Best practices adherence
+   - Performance optimization opportunities
+   - Potential security vulnerabilities
+   - Code style and readability
+
+Format your response as a valid JSON object with the following structure:
+{
+  "score": number,
+  "analysis": "detailed analysis text",
+  "strengths": ["strength1", "strength2", ...],
+  "weaknesses": ["weakness1", "weakness2", ...],
+  "suggestions": ["suggestion1", "suggestion2", ...],
+  "codeQualityMetrics": {
+    "maintainability": number (0-100),
+    "reliability": number (0-100),
+    "security": number (0-100),
+    "performance": number (0-100)
+  },
+  "codeQualityDetails": {
+    "staticAnalysis": ["finding1", "finding2", ...],
+    "bestPractices": ["practice1", "practice2", ...],
+    "performanceIssues": ["issue1", "issue2", ...],
+    "securityVulnerabilities": ["vulnerability1", "vulnerability2", ...]
+  }
+}
+`;
+    } else {
+      // For non-coding questions, use the original prompt
+      prompt = `You are an expert interviewer evaluating a candidate's response to the following interview question:
 
 Question: ${question.content}
 Category: ${question.category}
@@ -389,6 +443,7 @@ Format your response as a valid JSON object with the following structure:
   "suggestions": ["suggestion1", "suggestion2", ...]
 }
 `;
+    }
 
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
@@ -414,6 +469,8 @@ Format your response as a valid JSON object with the following structure:
       logger.debug('Response text:', responseText);
       throw new ApiError('Failed to parse AI analysis', 500);
     }
+
+    console.log("analysis", responseText, analysis)
 
     return {
       score: analysis.score,

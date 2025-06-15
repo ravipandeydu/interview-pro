@@ -17,7 +17,7 @@ import { sendSuccess, sendPaginated } from '../utils/response.js';
  */
 export const getResponseById = async (req, res, next) => {
   try {
-    const { responseService } = req.scope;
+    const { responseService } = req.container.cradle;
     const response = await responseService.getResponseById(req.params.id);
     sendSuccess(res, 200, 'Response retrieved successfully', response);
   } catch (error) {
@@ -33,7 +33,7 @@ export const getResponseById = async (req, res, next) => {
  */
 export const submitResponse = async (req, res, next) => {
   try {
-    const { responseService } = req.scope;
+    const { responseService } = req.container.cradle;
     const responseData = req.body;
     
     const response = await responseService.submitResponse(responseData);
@@ -51,7 +51,7 @@ export const submitResponse = async (req, res, next) => {
  */
 export const updateResponse = async (req, res, next) => {
   try {
-    const { responseService } = req.scope;
+    const { responseService } = req.container.cradle;
     const { id } = req.params;
     const updateData = req.body;
     
@@ -70,7 +70,7 @@ export const updateResponse = async (req, res, next) => {
  */
 export const deleteResponse = async (req, res, next) => {
   try {
-    const { responseService } = req.scope;
+    const { responseService } = req.container.cradle;
     await responseService.deleteResponse(req.params.id);
     sendSuccess(res, 200, 'Response deleted successfully');
   } catch (error) {
@@ -86,7 +86,7 @@ export const deleteResponse = async (req, res, next) => {
  */
 export const getResponsesByInterviewId = async (req, res, next) => {
   try {
-    const { responseService } = req.scope;
+    const { responseService } = req.container.cradle;
     const { interviewId } = req.params;
     
     const responses = await responseService.getResponsesByInterviewId(interviewId);
@@ -104,7 +104,7 @@ export const getResponsesByInterviewId = async (req, res, next) => {
  */
 export const analyzeResponse = async (req, res, next) => {
   try {
-    const { responseService, aiService } = req.scope;
+    const { responseService, aiService } = req.container.cradle;
     const { id } = req.params;
     
     // Get the response
@@ -115,13 +115,14 @@ export const analyzeResponse = async (req, res, next) => {
     const question = interviewQuestion.question;
     
     // Analyze the response using AI
-    const analysis = await aiService.analyzeInterviewResponse({
-      questionContent: question.content,
-      questionCategory: question.category,
-      questionDifficulty: question.difficulty,
-      expectedAnswer: question.expectedAnswer,
-      responseContent: response.content,
-      transcriptText: response.transcriptText || response.content,
+    const analysis = await aiService.analyzeResponse({
+      question: {
+        content: question.content,
+        category: question.category,
+        difficulty: question.difficulty,
+        expectedAnswer: question.expectedAnswer
+      },
+      responseContent: response.transcriptText || response.content
     });
     
     // Update the response with AI analysis
