@@ -281,6 +281,16 @@ export default function InterviewPage({ params }: { params: { id: string } }) {
                 <Button
                   variant="outline"
                   size="sm"
+                  className="flex items-center gap-1 backdrop-blur-sm bg-background/50 border-emerald-500/30 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/20 transition-all duration-300"
+                  onClick={() => router.push(`/interviews/${id}/join`)}
+                >
+                  <ActivitySquare className="h-4 w-4 mr-1" />
+                  Join Interview
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="flex items-center gap-1 backdrop-blur-sm bg-background/50 border-indigo-500/30 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50/20 dark:hover:bg-indigo-950/20 transition-all duration-300"
                   onClick={handleCopyLink}
                 >
