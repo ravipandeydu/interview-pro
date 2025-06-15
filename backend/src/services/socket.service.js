@@ -211,6 +211,21 @@ function setupInterviewEvents(socket) {
       timestamp: new Date().toISOString()
     });
   });
+  
+  // Save code during interview
+  socket.on('interview:codeSave', (data) => {
+    const { interviewId, code, language } = data;
+    
+    // Broadcast to everyone in the interview including sender
+    io.to(`interview:${interviewId}`).emit('interview:codeSaved', {
+      code,
+      language,
+      userId: socket.user.id,
+      timestamp: new Date().toISOString()
+    });
+    
+    logger.info(`User ${socket.user.id} saved code in interview: ${interviewId}`);
+  });
 }
 
 /**
