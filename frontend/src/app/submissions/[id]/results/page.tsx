@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, use } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useInterview, useInterviewResult, useInterviewSubmissions, useSubmissionOperations } from '@/hooks/useInterview';
 import { useFeedbackOperations, useInterviewFeedback } from '@/hooks/useFeedback';
@@ -18,9 +18,9 @@ import { FeedbackUI, InterviewFeedbackUI, FeedbackDialog, InterviewFeedbackDialo
 import { PlagiarismDialog } from '@/components/plagiarism';
 import { CheckCircle, XCircle, AlertCircle, Download, FileText, ActivitySquare, ShieldCheck, Lock, Gauge, Sparkles, AlertTriangle, Loader2 } from 'lucide-react';
 
-export default function SubmissionResultsPage() {
+export default function SubmissionResultsPage({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const { id } = useParams<{ id: string }>();
+  const id = use(params).id;
   const [activeTab, setActiveTab] = useState('overview');
   const [showCustomFeedbackForm, setShowCustomFeedbackForm] = useState(false);
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);

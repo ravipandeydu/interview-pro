@@ -8,12 +8,12 @@ import { Badge } from '../../../components/ui/badge';
 import { Skeleton } from '../../../components/ui/skeleton';
 import { toast } from 'sonner';
 import { Pencil, Trash2, ArrowLeft } from 'lucide-react';
-import { useState } from 'react';
+import { useState, use } from 'react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../../components/ui/alert-dialog';
 
-export default function QuestionDetailsPage() {
+export default function QuestionDetailsPage({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const { id } = useParams<{ id: string }>();
+  const id = use(params).id;
   const { data: question, isLoading } = useQuestion(id as string);
   const { deleteQuestion, isDeleting } = useQuestionOperations();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);

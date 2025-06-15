@@ -1,12 +1,13 @@
 'use client';
 
 import { useParams } from 'next/navigation';
+import { use } from 'react';
 import { useQuestion } from '../../../../hooks/useQuestion';
 import QuestionForm from '../../../../components/questions/QuestionForm';
 import { Skeleton } from '../../../../components/ui/skeleton';
 
-export default function EditQuestionPage() {
-  const { id } = useParams<{ id: string }>();
+export default function EditQuestionPage({ params }: { params: { id: string } }) {
+  const id = use(params).id;
   console.log(id, "idddddddddd")
   const { data: question, isLoading } = useQuestion(id as string);
 

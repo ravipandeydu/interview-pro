@@ -181,62 +181,97 @@ export function InterviewNotes({ interviewId, accessToken }: { interviewId: stri
   
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Notes</CardTitle>
-          <CardDescription>Loading notes...</CardDescription>
+      <Card className="backdrop-blur-md bg-background/40 border border-indigo-500/20 shadow-xl transition-all duration-300 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 pointer-events-none" />
+        <CardHeader className="relative z-10">
+          <CardTitle className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-600 dark:from-indigo-400 dark:via-purple-400 dark:to-violet-400">Interview Notes</CardTitle>
+          <CardDescription className="flex items-center gap-2">
+            <Clock className="h-4 w-4 animate-pulse text-muted-foreground" />
+            Loading notes...
+          </CardDescription>
         </CardHeader>
       </Card>
     );
   }
   
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+    <Card className="backdrop-blur-md bg-background/40 border border-indigo-500/20 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 pointer-events-none" />
+      <CardHeader className="relative z-10 flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Interview Notes</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-600 dark:from-indigo-400 dark:via-purple-400 dark:to-violet-400">Interview Notes</CardTitle>
+          <CardDescription className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-muted-foreground" />
             Collaborative notes for this interview
           </CardDescription>
         </div>
-        <Button onClick={handleCreateNote} disabled={isCreating}>
-          {isCreating ? 'Creating...' : 'New Note'}
+        <Button 
+          onClick={handleCreateNote} 
+          disabled={isCreating}
+          className="relative overflow-hidden bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
+        >
+          {isCreating ? (
+            <>
+              <span className="animate-pulse">Creating...</span>
+              <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+            </>
+          ) : (
+            'New Note'
+          )}
         </Button>
       </CardHeader>
-      <CardContent>
+      <CardContent className="relative z-10">
         {notes.length === 0 ? (
-          <div className="text-center py-10">
-            <FileText className="h-10 w-10 mx-auto text-muted-foreground" />
+          <div className="text-center py-10 px-6 rounded-lg backdrop-blur-sm bg-background/60 border border-indigo-500/10">
+            <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 flex items-center justify-center mb-4">
+              <FileText className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
+            </div>
             <p className="mt-2 text-muted-foreground">No notes yet</p>
-            <Button onClick={handleCreateNote} className="mt-4" disabled={isCreating}>
-              Create your first note
+            <Button 
+              onClick={handleCreateNote} 
+              className="mt-4 relative overflow-hidden bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105" 
+              disabled={isCreating}
+            >
+              {isCreating ? (
+                <>
+                  <span className="animate-pulse">Creating...</span>
+                  <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                </>
+              ) : (
+                'Create your first note'
+              )}
             </Button>
           </div>
         ) : (
           <div className="grid grid-cols-4 gap-6">
-            <div className="col-span-1 border-r pr-4">
-              <h3 className="font-medium mb-2">All Notes</h3>
-              <div className="space-y-2">
+            <div className="col-span-1 border-r border-indigo-500/10 pr-4">
+              <h3 className="font-medium mb-3 text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                All Notes
+              </h3>
+              <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                 {notes.map(note => (
                   <div 
                     key={note.id} 
-                    className={`p-2 rounded-md cursor-pointer hover:bg-muted flex justify-between items-start ${
-                      selectedNote?.id === note.id ? 'bg-muted' : ''
+                    className={`p-3 rounded-md cursor-pointer hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 flex justify-between items-start transition-all duration-200 border border-transparent ${
+                      selectedNote?.id === note.id ? 'bg-indigo-50/80 dark:bg-indigo-950/30 border-indigo-200/50 dark:border-indigo-800/50 shadow-sm' : ''
                     }`}
                     onClick={() => setSelectedNote(note)}
                   >
-                    <div>
-                      <p className="font-medium truncate">{note.title || 'Untitled Note'}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className={`font-medium truncate ${selectedNote?.id === note.id ? 'text-indigo-700 dark:text-indigo-400' : ''}`}>
+                        {note.title || 'Untitled Note'}
+                      </p>
                       <p className="text-xs text-muted-foreground flex items-center mt-1">
                         <Clock className="h-3 w-3 mr-1" />
                         {format(new Date(note.updatedAt), 'MMM d, h:mm a')}
                       </p>
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 ml-2">
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-6 w-6"
+                        className="h-6 w-6 rounded-full hover:bg-indigo-100/80 dark:hover:bg-indigo-900/30 hover:text-indigo-700 dark:hover:text-indigo-400"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleViewHistory(note.id);
@@ -252,52 +287,72 @@ export function InterviewNotes({ interviewId, accessToken }: { interviewId: stri
             
             <div className="col-span-3">
               {showHistory ? (
-                <div>
+                <div className="backdrop-blur-sm bg-background/60 rounded-lg border border-indigo-500/10 p-4">
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-medium">Note History</h3>
+                    <h3 className="font-medium flex items-center gap-2 text-indigo-700 dark:text-indigo-400">
+                      <History className="h-4 w-4" />
+                      Note History
+                    </h3>
                     <Button 
-                      variant="ghost" 
+                      variant="outline" 
                       size="sm"
                       onClick={() => setShowHistory(false)}
+                      className="border-indigo-200 dark:border-indigo-800/50 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400"
                     >
                       Back to Note
                     </Button>
                   </div>
                   
                   {historyLoading ? (
-                    <p className="text-muted-foreground">Loading history...</p>
+                    <div className="flex items-center justify-center p-8">
+                      <Clock className="h-5 w-5 mr-2 animate-pulse text-indigo-600 dark:text-indigo-400" />
+                      <p className="text-muted-foreground">Loading history...</p>
+                    </div>
                   ) : noteHistory.length > 0 ? (
-                    <div className="space-y-4">
+                    <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                       {noteHistory.map((edit) => (
-                        <div key={edit.id} className="border rounded-md p-4">
+                        <div key={edit.id} className="border border-indigo-200/50 dark:border-indigo-800/30 rounded-md p-4 bg-white/50 dark:bg-gray-950/50 backdrop-blur-sm hover:shadow-md transition-all duration-300">
                           <div className="flex justify-between items-start mb-2">
                             <div>
-                              <p className="font-medium">{edit.user.name}</p>
-                              <p className="text-xs text-muted-foreground">
+                              <p className="font-medium text-indigo-700 dark:text-indigo-400">{edit.user.name}</p>
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
                                 {format(new Date(edit.createdAt), 'MMM d, yyyy h:mm a')}
                               </p>
                             </div>
-                            <Badge variant="outline">Edit #{noteHistory.length - noteHistory.indexOf(edit)}</Badge>
+                            <Badge variant="outline" className="bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 border-indigo-200/50 dark:border-indigo-800/30">
+                              Edit #{noteHistory.length - noteHistory.indexOf(edit)}
+                            </Badge>
                           </div>
-                          <Separator className="my-2" />
+                          <Separator className="my-2 bg-indigo-100 dark:bg-indigo-800/30" />
                           <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: edit.content }} />
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-muted-foreground">No edit history available</p>
+                    <div className="text-center py-8 px-4">
+                      <div className="w-12 h-12 mx-auto rounded-full bg-indigo-50 dark:bg-indigo-950/30 flex items-center justify-center mb-3">
+                        <History className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                      </div>
+                      <p className="text-muted-foreground">No edit history available</p>
+                    </div>
                   )}
                 </div>
               ) : selectedNote ? (
-                <CollaborativeNoteEditor
-                  key={selectedNote.id} // Add a key prop to force re-render when the note changes
-                  noteId={selectedNote.id}
-                  initialTitle={selectedNote.title}
-                  initialContent={selectedNote.content}
-                  onSave={handleSaveNote}
-                />
+                <div className="backdrop-blur-sm bg-background/60 rounded-lg border border-indigo-500/10 p-4">
+                  <CollaborativeNoteEditor
+                    key={selectedNote.id} // Add a key prop to force re-render when the note changes
+                    noteId={selectedNote.id}
+                    initialTitle={selectedNote.title}
+                    initialContent={selectedNote.content}
+                    onSave={handleSaveNote}
+                  />
+                </div>
               ) : (
-                <div className="text-center py-10">
+                <div className="text-center py-16 px-6 backdrop-blur-sm bg-background/60 rounded-lg border border-indigo-500/10">
+                  <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 flex items-center justify-center mb-4">
+                    <FileText className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
+                  </div>
                   <p className="text-muted-foreground">Select a note to view or edit</p>
                 </div>
               )}

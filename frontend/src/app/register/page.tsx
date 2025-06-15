@@ -90,14 +90,16 @@ export default function RegisterPage() {
     }
 
     setIsLoading(true);
-    
+
     try {
       const result = await register({
         name: values.name,
         email: values.email,
         password: values.password,
       });
-      toast.success("Account created successfully! Please check your email to verify your account.");
+      toast.success(
+        "Account created successfully! Please check your email to verify your account."
+      );
       form.reset();
     } catch (error: any) {
       console.error("Registration error:", error);
@@ -108,18 +110,26 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-900 dark:to-gray-800 p-4">
-      <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="space-y-1">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-100 dark:from-gray-900 dark:to-gray-800 p-4 relative overflow-hidden">
+      {/* Abstract background elements */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
+        <div className="absolute top-10 left-10 w-72 h-72 bg-purple-300 dark:bg-purple-900 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+        <div className="absolute top-0 right-10 w-72 h-72 bg-indigo-300 dark:bg-indigo-900 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-blue-300 dark:bg-blue-900 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+      </div>
+
+      <Card className="w-full max-w-md backdrop-blur-md bg-background/40 border border-indigo-500/20 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden relative z-10">
+        <div className="absolute inset-0 bbg-gradient-to-b from-indigo-100/80 to-white/60 dark:from-indigo-900/30 dark:to-gray-900/30 rounded-t-lg border-b border-indigo-100/50 dark:border-indigo-900/50 pointer-events-none" />
+        <CardHeader className="space-y-1 bg-gradient-to-b from-indigo-100/80 to-white/60 dark:from-indigo-900/30 dark:to-gray-900/30 rounded-t-lg border-b border-indigo-100/50 dark:border-indigo-900/50 shadow-sm">
           <div className="flex items-center justify-center mb-4">
-            <div className="p-3 bg-green-100 dark:bg-green-900 rounded-full">
-              <UserPlus className="h-6 w-6 text-green-600 dark:text-green-400" />
+            <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full shadow-lg shadow-indigo-500/30">
+              <UserPlus className="h-6 w-6 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold text-center">
+          <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
             Create account
           </CardTitle>
-          <CardDescription className="text-center">
+          <CardDescription className="text-center text-indigo-700/70 dark:text-indigo-300/70">
             Enter your information to create your account
           </CardDescription>
         </CardHeader>
@@ -131,15 +141,17 @@ export default function RegisterPage() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Full Name</FormLabel>
+                    <FormLabel className="text-indigo-700 dark:text-indigo-300 flex items-center gap-1">
+                      Full Name
+                    </FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Enter your full name"
-                        className="transition-all duration-200 focus:ring-2 focus:ring-blue-500"
+                        className="transition-all duration-200 focus:ring-2 focus:ring-indigo-500 bg-white/70 dark:bg-gray-800/50 backdrop-blur-sm border-indigo-200 dark:border-indigo-900/30"
                         {...field}
                       />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="font-medium" />
                   </FormItem>
                 )}
               />
@@ -148,15 +160,17 @@ export default function RegisterPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel className="text-indigo-700 dark:text-indigo-300 flex items-center gap-1">
+                      Email
+                    </FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Email"
-                        className="transition-all duration-200 focus:ring-2 focus:ring-blue-500"
+                        className="transition-all duration-200 focus:ring-2 focus:ring-indigo-500 bg-white/70 dark:bg-gray-800/50 backdrop-blur-sm border-indigo-200 dark:border-indigo-900/30"
                         {...field}
                       />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="font-medium" />
                   </FormItem>
                 )}
               />
@@ -165,20 +179,22 @@ export default function RegisterPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel className="text-indigo-700 dark:text-indigo-300 flex items-center gap-1">
+                      Password
+                    </FormLabel>
                     <FormControl>
                       <div>
                         <div className="relative">
                           <Input
                             placeholder="Password"
-                            className="pr-10 transition-all duration-200 focus:ring-2 focus:ring-blue-500"
+                            className="pr-10 transition-all duration-200 focus:ring-2 focus:ring-indigo-500 bg-white/70 dark:bg-gray-800/50 backdrop-blur-sm border-indigo-200 dark:border-indigo-900/30"
                             type={showPassword ? "text" : "password"}
                             {...field}
                           />
                           <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-indigo-500 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-200 transition-colors"
                           >
                             {showPassword ? (
                               <EyeOff className="h-4 w-4" />
@@ -197,14 +213,14 @@ export default function RegisterPage() {
                                   className="flex items-center space-x-2 text-xs"
                                 >
                                   {isValid ? (
-                                    <Check className="h-3 w-3 text-green-500" />
+                                    <Check className="h-3 w-3 text-indigo-500" />
                                   ) : (
                                     <X className="h-3 w-3 text-red-500" />
                                   )}
                                   <span
                                     className={
                                       isValid
-                                        ? "text-green-600 dark:text-green-400"
+                                        ? "text-indigo-600 dark:text-indigo-400 font-medium"
                                         : "text-red-600 dark:text-red-400"
                                     }
                                   >
@@ -226,13 +242,15 @@ export default function RegisterPage() {
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
+                    <FormLabel className="text-indigo-700 dark:text-indigo-300 flex items-center gap-1">
+                      Confirm Password
+                    </FormLabel>
                     <FormControl>
                       <div>
                         <div className="relative">
                           <Input
                             placeholder="Password"
-                            className="pr-10 transition-all duration-200 focus:ring-2 focus:ring-blue-500"
+                            className="pr-10 transition-all duration-200 focus:ring-2 focus:ring-indigo-500 bg-white/70 dark:bg-gray-800/50 backdrop-blur-sm border-indigo-200 dark:border-indigo-900/30"
                             type={showConfirmPassword ? "text" : "password"}
                             {...field}
                           />
@@ -241,7 +259,7 @@ export default function RegisterPage() {
                             onClick={() =>
                               setShowConfirmPassword(!showConfirmPassword)
                             }
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-indigo-500 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-200 transition-colors"
                           >
                             {showConfirmPassword ? (
                               <EyeOff className="h-4 w-4" />
@@ -254,8 +272,8 @@ export default function RegisterPage() {
                           <div className="flex items-center space-x-2 text-xs mt-1">
                             {form.getValues().password === field.value ? (
                               <>
-                                <Check className="h-3 w-3 text-green-500" />
-                                <span className="text-green-600 dark:text-green-400">
+                                <Check className="h-3 w-3 text-indigo-500" />
+                                <span className="text-indigo-600 dark:text-indigo-400 font-medium">
                                   Passwords match
                                 </span>
                               </>
@@ -271,31 +289,33 @@ export default function RegisterPage() {
                         )}
                       </div>
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="font-medium" />
                   </FormItem>
                 )}
               />
             </CardContent>
-            <CardFooter className="flex flex-col space-y-4">
+            <CardFooter className="flex flex-col space-y-4 relative z-10 bg-gradient-to-t from-indigo-50/80 to-white/40 dark:from-gray-800/80 dark:to-gray-900/40 rounded-b-lg border-t border-indigo-100/50 dark:border-indigo-900/50 pt-4">
               <Button
                 type="submit"
-                className="w-full bg-green-600 hover:bg-green-700 text-white transition-all duration-200 transform hover:scale-[1.02]"
+                className="w-full backdrop-blur-sm bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/30 border-0 transition-all duration-300 hover:scale-[1.02]"
                 disabled={isLoading}
               >
                 {isLoading ? (
                   <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     <span>Creating account...</span>
                   </div>
                 ) : (
-                  "Create account"
+                  <span className="flex items-center gap-2">
+                    Create account <UserPlus className="h-4 w-4" />
+                  </span>
                 )}
               </Button>
-              <div className="text-center text-sm text-gray-600 dark:text-gray-400">
+              <div className="text-center text-sm text-indigo-700/70 dark:text-indigo-300/70">
                 Already have an account?{" "}
                 <Link
                   href="/login"
-                  className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200 font-medium transition-colors"
+                  className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-200 font-medium transition-colors hover:underline"
                 >
                   Sign in
                 </Link>
