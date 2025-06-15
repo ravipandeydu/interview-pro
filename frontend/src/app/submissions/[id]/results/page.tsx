@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useInterview, useInterviewResult, useInterviewSubmissions, useSubmissionOperations } from '@/hooks/useInterview';
+import { useFeedbackOperations, useInterviewFeedback } from '@/hooks/useFeedback';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,12 +14,15 @@ import { toast } from 'sonner';
 import { Editor } from '@monaco-editor/react';
 import { TipTapEditor } from '@/components/TipTapEditor';
 import { Submission } from '@/services/interviewService';
-import { CheckCircle, XCircle, AlertCircle, Download, FileText, ActivitySquare, ShieldCheck, Lock, Gauge } from 'lucide-react';
+import { FeedbackUI, InterviewFeedbackUI, FeedbackDialog, InterviewFeedbackDialog, CustomFeedbackForm } from '@/components/feedback';
+import { CheckCircle, XCircle, AlertCircle, Download, FileText, ActivitySquare, ShieldCheck, Lock, Gauge, Sparkles } from 'lucide-react';
 
 export default function SubmissionResultsPage() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState('overview');
+  const [showCustomFeedbackForm, setShowCustomFeedbackForm] = useState(false);
+  const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
   
   // Fetch interview data
   const { data: interview, isLoading: isLoadingInterview } = useInterview(id as string);
@@ -29,8 +33,21 @@ export default function SubmissionResultsPage() {
   // Fetch submissions
   const { data: submissions, isLoading: isLoadingSubmissions } = useInterviewSubmissions(id as string);
   
-  // PDF generation
+  // Fetch interview feedback
+  const { data: interviewFeedback, isLoading: isLoadingInterviewFeedback } = useInterviewFeedback(id as string);
+  
+  // PDF generation and submission analysis
   const { generatePdfReport, isGeneratingPdfReport, analyzeSubmission, isAnalyzingSubmission } = useSubmissionOperations();
+  
+  // Feedback operations
+  const {
+    generateInterviewFeedback,
+    isGeneratingInterviewFeedback,
+    generateResponseFeedback,
+    isGeneratingResponseFeedback,
+    generateCustomFeedback,
+    isGeneratingCustomFeedback
+  } = useFeedbackOperations();
   
   // Handle PDF download
   const handleDownloadPdf = () => {
@@ -61,12 +78,59 @@ export default function SubmissionResultsPage() {
       },
     });
   };
+  
+  // Handle generating comprehensive interview feedback
+  const handleGenerateInterviewFeedback = () => {
+    if (!id) return;
+    
+    generateInterviewFeedback(id as string, {
+      onSuccess: () => {
+        toast.success('Comprehensive interview feedback generated successfully');
+      },
+      onError: (error) => {
+        toast.error('Failed to generate comprehensive feedback');
+        console.error('Generate interview feedback error:', error);
+      },
+    });
+  };
+  
+  // Handle generating feedback for a specific response
+  const handleGenerateResponseFeedback = (responseId: string) => {
+    generateResponseFeedback(responseId, {
+      onSuccess: () => {
+        toast.success('Response feedback generated successfully');
+      },
+      onError: (error) => {
+        toast.error('Failed to generate response feedback');
+        console.error('Generate response feedback error:', error);
+      },
+    });
+  };
+  
+  // Handle generating custom feedback
+  const handleGenerateCustomFeedback = (options: any) => {
+    if (!selectedSubmissionId) return;
+    
+    generateCustomFeedback({ responseId: selectedSubmissionId, options }, {
+      onSuccess: (data) => {
+        toast.success('Custom feedback generated successfully');
+        setShowCustomFeedbackForm(false);
+      },
+      onError: (error) => {
+        toast.error('Failed to generate custom feedback');
+        console.error('Generate custom feedback error:', error);
+      },
+    });
+  };
 
   // Loading state
   if (isLoadingInterview || isLoadingResult || isLoadingSubmissions) {
     return (
-      <div className="container mx-auto py-8 px-4 text-center">
-        <p>Loading results...</p>
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Loading results...</h2>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto"></div>
+        </div>
       </div>
     );
   }
@@ -74,14 +138,33 @@ export default function SubmissionResultsPage() {
   // Error state
   if (!interview || !result || !submissions) {
     return (
-      <div className="container mx-auto py-8 px-4 text-center">
-        <p className="text-red-500">Error loading results. Please try again.</p>
-        <Button className="mt-4" onClick={() => router.push('/dashboard')}>
-          Back to Dashboard
-        </Button>
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Error loading results</h2>
+          <p className="text-gray-500 mb-4">Unable to load interview results. Please try again later.</p>
+          <Button onClick={() => router.push('/interviews')}>Back to Interviews</Button>
+        </div>
       </div>
     );
   }
+  
+  // Custom feedback form dialog
+  const renderCustomFeedbackForm = () => {
+    if (!showCustomFeedbackForm || !selectedSubmissionId) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl">
+          <h2 className="text-xl font-bold mb-4">Customize Feedback</h2>
+          <CustomFeedbackForm 
+            onSubmit={handleGenerateCustomFeedback}
+            onCancel={() => setShowCustomFeedbackForm(false)}
+            isLoading={isGeneratingCustomFeedback}
+          />
+        </div>
+      </div>
+    );
+  };
 
   // Get score color based on value
   const getScoreColor = (score: number) => {
@@ -107,6 +190,7 @@ export default function SubmissionResultsPage() {
 
   return (
     <div className="container mx-auto py-8 px-4">
+      {renderCustomFeedbackForm()}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold">{interview.title} - Results</h1>
@@ -115,6 +199,24 @@ export default function SubmissionResultsPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button
+            onClick={handleGenerateInterviewFeedback}
+            disabled={isGeneratingInterviewFeedback}
+            className="flex items-center"
+            variant="outline"
+          >
+            {isGeneratingInterviewFeedback ? (
+              <>
+                <div className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-primary rounded-full"></div>
+                Generating Feedback...
+              </>
+            ) : (
+              <>
+                <Sparkles className="mr-2 h-4 w-4" />
+                Generate AI Feedback
+              </>
+            )}
+          </Button>
           <Button
             variant="outline"
             onClick={handleDownloadPdf}
@@ -177,7 +279,7 @@ export default function SubmissionResultsPage() {
         <TabsList className="grid w-full md:w-[600px] grid-cols-3">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="submissions">Submissions</TabsTrigger>
-          <TabsTrigger value="feedback">AI Feedback</TabsTrigger>
+          <TabsTrigger value="ai-feedback">AI Feedback</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview" className="mt-6">
@@ -196,6 +298,36 @@ export default function SubmissionResultsPage() {
                 </div>
                 
                 <Separator />
+                
+                {/* Comprehensive AI Feedback */}
+                {interviewFeedback && (
+                  <div className="mt-4">
+                    <h3 className="text-lg font-medium mb-2">Comprehensive AI Feedback</h3>
+                    <InterviewFeedbackUI feedback={interviewFeedback} />
+                  </div>
+                )}
+                
+                {!interviewFeedback && (
+                  <div className="mt-4 text-center py-4">
+                    <p className="text-gray-500 mb-4">No comprehensive feedback available yet.</p>
+                    <Button 
+                      onClick={handleGenerateInterviewFeedback} 
+                      disabled={isGeneratingInterviewFeedback}
+                    >
+                      {isGeneratingInterviewFeedback ? (
+                        <>
+                          <div className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-primary rounded-full"></div>
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          Generate Comprehensive Feedback
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
                 
                 <div>
                   <h3 className="text-lg font-medium">Question Performance</h3>
@@ -231,6 +363,8 @@ export default function SubmissionResultsPage() {
                     })}
                   </div>
                 </div>
+                
+
               </div>
             </CardContent>
           </Card>
@@ -358,18 +492,54 @@ export default function SubmissionResultsPage() {
                         </div>
                       )}
                       
-                      {/* AI Analysis Button */}
-                      {!submission.aiAnalysis && (
-                        <div className="mt-4">
+                      {/* AI Analysis and Feedback Buttons */}
+                      <div className="flex justify-end mt-4 space-x-2">
+                        {!submission.aiAnalysis && (
                           <Button 
                             onClick={() => handleAnalyzeSubmission(submission.id)}
-                            className="w-full"
                             disabled={isAnalyzingSubmission}
+                            variant="outline"
                           >
-                            {isAnalyzingSubmission ? 'Analyzing...' : 'Analyze with AI'}
+                            {isAnalyzingSubmission ? (
+                              <>
+                                <div className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-primary rounded-full"></div>
+                                Analyzing...
+                              </>
+                            ) : (
+                              <>Analyze with AI</>
+                            )}
                           </Button>
-                        </div>
-                      )}
+                        )}
+                        
+                        <Button 
+                          onClick={() => handleGenerateResponseFeedback(submission.id)}
+                          disabled={isGeneratingResponseFeedback}
+                          variant="outline"
+                        >
+                          {isGeneratingResponseFeedback ? (
+                            <>
+                              <div className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-primary rounded-full"></div>
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="mr-2 h-4 w-4" />
+                              Generate Feedback
+                            </>
+                          )}
+                        </Button>
+                        
+                        {submission.aiAnalysis && (
+                          <FeedbackDialog 
+                            feedback={submission.aiAnalysis} 
+                            title={question?.title || 'Question'}
+                            onCustomize={() => {
+                              setSelectedSubmissionId(submission.id);
+                              setShowCustomFeedbackForm(true);
+                            }}
+                          />
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -378,7 +548,7 @@ export default function SubmissionResultsPage() {
           </div>
         </TabsContent>
         
-        <TabsContent value="feedback" className="mt-6">
+        <TabsContent value="ai-feedback" className="mt-6">
           <Card>
             <CardHeader>
               <CardTitle>AI Analysis</CardTitle>
@@ -390,187 +560,66 @@ export default function SubmissionResultsPage() {
               <div className="space-y-6">
                 {submissions.map((submission) => {
                   if (!submission.aiAnalysis) return null;
-                  const question = interview.questions.find(q => q.questionId === submission.questionId);
+                  const question = interview.questions.find(q => q.id === submission.questionId);
+                  if (!question) return null;
+                  
                   return (
-                    <div key={submission.id} className="space-y-4">
-                      <div className="flex items-start gap-4">
-                        <FileText className="h-5 w-5 mt-1 text-blue-500" />
-                        <div>
-                          <h3 className="text-lg font-medium">{question?.title || 'Question'}</h3>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-sm font-medium">Score:</span>
-                            <span className={`${getScoreColor(submission.aiAnalysis.score)}`}>
-                              {submission.aiAnalysis.score}/100
-                            </span>
+                    <Card key={submission.id} className="mb-6">
+                      <CardHeader>
+                        <CardTitle>{question.title}</CardTitle>
+                        <CardDescription>
+                          {question.type} · {question.difficulty} · {question.points} points
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <FeedbackUI feedback={submission.aiAnalysis} />
+                          <div className="flex justify-end space-x-2 mt-4">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                setSelectedSubmissionId(submission.id);
+                                setShowCustomFeedbackForm(true);
+                              }}
+                            >
+                              Customize Feedback
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleGenerateResponseFeedback(submission.id)}
+                              disabled={isGeneratingResponseFeedback}
+                            >
+                              {isGeneratingResponseFeedback ? 'Regenerating...' : 'Regenerate Feedback'}
+                            </Button>
                           </div>
                         </div>
-                      </div>
-                      
-                      <div className="ml-9 space-y-4">
-                        <div>
-                          <h4 className="font-medium mb-2">Feedback</h4>
-                          <p>{submission.aiAnalysis.feedback}</p>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <h4 className="font-medium mb-2 text-green-600">Strengths</h4>
-                            <ul className="list-disc pl-5 space-y-1">
-                              {submission.aiAnalysis.strengths.map((strength, index) => (
-                                <li key={index}>{strength}</li>
-                              ))}
-                            </ul>
-                          </div>
-                          
-                          <div>
-                            <h4 className="font-medium mb-2 text-red-600">Areas for Improvement</h4>
-                            <ul className="list-disc pl-5 space-y-1">
-                              {submission.aiAnalysis.weaknesses.map((weakness, index) => (
-                                <li key={index}>{weakness}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <h4 className="font-medium mb-2 text-blue-600">Suggestions</h4>
-                          <ul className="list-disc pl-5 space-y-1">
-                            {submission.aiAnalysis.suggestions.map((suggestion, index) => (
-                              <li key={index}>{suggestion}</li>
-                            ))}
-                          </ul>
-                        </div>
-                        
-                        {/* Code Quality Metrics - Only shown for coding questions */}
-                        {question?.type === 'coding' && submission.aiAnalysis.codeQualityMetrics && (
-                          <div>
-                            <h4 className="font-medium mb-2 text-purple-600">Code Quality Metrics</h4>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                              <div className="border rounded-md p-3 bg-purple-50">
-                                <div className="text-sm text-muted-foreground">Maintainability</div>
-                                <div className="flex items-center justify-between mt-1">
-                                  <span className="text-lg font-semibold">
-                                    {submission.aiAnalysis.codeQualityMetrics.maintainability}/100
-                                  </span>
-                                  <ActivitySquare className="h-5 w-5 text-purple-500" />
-                                </div>
-                              </div>
-                              <div className="border rounded-md p-3 bg-blue-50">
-                                <div className="text-sm text-muted-foreground">Reliability</div>
-                                <div className="flex items-center justify-between mt-1">
-                                  <span className="text-lg font-semibold">
-                                    {submission.aiAnalysis.codeQualityMetrics.reliability}/100
-                                  </span>
-                                  <ShieldCheck className="h-5 w-5 text-blue-500" />
-                                </div>
-                              </div>
-                              <div className="border rounded-md p-3 bg-red-50">
-                                <div className="text-sm text-muted-foreground">Security</div>
-                                <div className="flex items-center justify-between mt-1">
-                                  <span className="text-lg font-semibold">
-                                    {submission.aiAnalysis.codeQualityMetrics.security}/100
-                                  </span>
-                                  <Lock className="h-5 w-5 text-red-500" />
-                                </div>
-                              </div>
-                              <div className="border rounded-md p-3 bg-green-50">
-                                <div className="text-sm text-muted-foreground">Performance</div>
-                                <div className="flex items-center justify-between mt-1">
-                                  <span className="text-lg font-semibold">
-                                    {submission.aiAnalysis.codeQualityMetrics.performance}/100
-                                  </span>
-                                  <Gauge className="h-5 w-5 text-green-500" />
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                        
-                        {/* Code Quality Details - Only shown for coding questions */}
-                        {question?.type === 'coding' && submission.aiAnalysis.codeQualityDetails && (
-                          <div className="space-y-4">
-                            <div>
-                              <h4 className="font-medium mb-2 text-indigo-600">Static Analysis</h4>
-                              <ul className="list-disc pl-5 space-y-1">
-                                {submission.aiAnalysis.codeQualityDetails.staticAnalysis.map((finding, index) => (
-                                  <li key={index}>{finding}</li>
-                                ))}
-                              </ul>
-                            </div>
-                            
-                            <div>
-                              <h4 className="font-medium mb-2 text-emerald-600">Best Practices</h4>
-                              <ul className="list-disc pl-5 space-y-1">
-                                {submission.aiAnalysis.codeQualityDetails.bestPractices.map((practice, index) => (
-                                  <li key={index}>{practice}</li>
-                                ))}
-                              </ul>
-                            </div>
-                            
-                            <div>
-                              <h4 className="font-medium mb-2 text-amber-600">Performance Issues</h4>
-                              <ul className="list-disc pl-5 space-y-1">
-                                {submission.aiAnalysis.codeQualityDetails.performanceIssues.map((issue, index) => (
-                                  <li key={index}>{issue}</li>
-                                ))}
-                              </ul>
-                            </div>
-                            
-                            <div>
-                              <h4 className="font-medium mb-2 text-rose-600">Security Vulnerabilities</h4>
-                              <ul className="list-disc pl-5 space-y-1">
-                                {submission.aiAnalysis.codeQualityDetails.securityVulnerabilities.map((vulnerability, index) => (
-                                  <li key={index}>{vulnerability}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          </div>
-                        )}
-                        
-                        
-                        {submission.plagiarismReport && (
-                          <div>
-                            <h4 className="font-medium mb-2 text-amber-600">Plagiarism Report</h4>
-                            <div className="border rounded-md p-4 bg-amber-50">
-                              <div className="flex items-center gap-2 mb-4">
-                                <span className="font-medium">Similarity Score:</span>
-                                <span className={`${submission.plagiarismReport.score > 30 ? 'text-red-500' : 'text-green-500'}`}>
-                                  {submission.plagiarismReport.score}%
-                                </span>
-                              </div>
-                              
-                              {submission.plagiarismReport.matches.length > 0 ? (
-                                <div>
-                                  <h5 className="font-medium mb-2">Matches Found:</h5>
-                                  <div className="space-y-2">
-                                    {submission.plagiarismReport.matches.map((match, index) => (
-                                      <div key={index} className="border rounded-md p-2">
-                                        <div className="flex justify-between items-center">
-                                          <span className="font-medium">{match.source}</span>
-                                          <Badge variant="outline">{match.similarity}% similar</Badge>
-                                        </div>
-                                        <div className="mt-2">
-                                          <div className="text-xs text-muted-foreground">Matched Text:</div>
-                                          <pre className="bg-muted p-2 rounded-md overflow-x-auto text-xs mt-1">
-                                            {match.matchedText}
-                                          </pre>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              ) : (
-                                <p>No significant matches found.</p>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <Separator />
-                    </div>
+                      </CardContent>
+                    </Card>
                   );
                 })}
+                {submissions.filter(s => s.aiAnalysis).length === 0 && (
+                  <div className="text-center py-6">
+                    <p className="text-gray-500 mb-4">No AI analysis available for any submissions.</p>
+                    <Button 
+                      onClick={handleGenerateInterviewFeedback}
+                      disabled={isGeneratingInterviewFeedback}
+                    >
+                      {isGeneratingInterviewFeedback ? (
+                        <>
+                          <div className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-white rounded-full"></div>
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          Generate Comprehensive Feedback
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

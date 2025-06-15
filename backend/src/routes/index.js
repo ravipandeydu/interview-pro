@@ -17,6 +17,7 @@ import questionRoutes from './question.routes.js';
 import responseRoutes from './response.routes.js';
 import candidateAccessRoutes from './candidate-access.routes.js';
 import noteRoutes from './note.routes.js';
+import feedbackRoutes from './feedback.routes.js';
 
 const router = express.Router();
 
@@ -278,5 +279,6 @@ router.use('/questions', questionRoutes);
 router.use('/responses', responseRoutes);
 router.use('/candidate-access', candidateAccessRoutes);
 router.use('/notes', noteRoutes);
+router.use('/feedback', feedbackRoutes);
 
 export default router;

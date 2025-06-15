@@ -19,6 +19,7 @@ import cloudflareR2Service from './services/cloudflare-r2.service.js';
 import socketService from './services/socket.service.js';
 import candidateAccessService from './services/candidate-access.service.js';
 import noteService from './services/note.service.js';
+import feedbackService from './services/feedback.service.js';
 
 // Import controllers
 import * as authController from './controllers/auth.controller.js';
@@ -30,6 +31,7 @@ import * as interviewController from './controllers/interview.controller.js';
 import * as questionController from './controllers/question.controller.js';
 import * as responseController from './controllers/response.controller.js';
 import * as candidateAccessController from './controllers/candidate-access.controller.js';
+import * as feedbackController from './controllers/feedback.controller.js';
 
 // Import middlewares
 import * as authMiddleware from './middlewares/auth.middleware.js';
@@ -61,6 +63,7 @@ container.register({
   socketService: asValue(socketService),
   candidateAccessService: asValue(candidateAccessService),
   noteService: asValue(noteService),
+  feedbackService: asValue(feedbackService),
   
   // Controllers
   authController: asValue(authController),
@@ -72,6 +75,7 @@ container.register({
   questionController: asValue(questionController),
   responseController: asValue(responseController),
   candidateAccessController: asValue(candidateAccessController),
+  feedbackController: asValue(feedbackController),
   
   // Middlewares
   authMiddleware: asValue(authMiddleware),
