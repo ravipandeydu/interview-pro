@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Candidate } from '../../services/candidateService';
+import { PencilIcon, UserPlusIcon } from 'lucide-react';
 
 // Define the form schema with Zod
 const candidateFormSchema = z.object({
@@ -109,24 +110,40 @@ export default function CandidateForm({ candidate, isEditing = false }: Candidat
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{isEditing ? 'Edit Candidate' : 'Add New Candidate'}</CardTitle>
+    <Card className="border border-border/40 bg-background/60 backdrop-blur-xl shadow-md hover:shadow-lg transition-all">
+      <CardHeader className="border-b border-border/20">
+        <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent flex items-center gap-2">
+          {isEditing ? (
+            <>
+              <PencilIcon className="h-5 w-5 text-primary" />
+              Edit Candidate
+            </>
+          ) : (
+            <>
+              <UserPlusIcon className="h-5 w-5 text-primary" />
+              Add New Candidate
+            </>
+          )}
+        </CardTitle>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <CardContent className="space-y-6 pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
                 name="fullName"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full Name*</FormLabel>
+                  <FormItem className="space-y-2">
+                    <FormLabel className="font-medium">Full Name*</FormLabel>
                     <FormControl>
-                      <Input placeholder="John Doe" {...field} />
+                      <Input 
+                        placeholder="John Doe" 
+                        {...field} 
+                        className="bg-background/50 border-border/50 focus-visible:ring-primary/70 transition-all"
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-destructive/90" />
                   </FormItem>
                 )}
               />
@@ -135,12 +152,16 @@ export default function CandidateForm({ candidate, isEditing = false }: Candidat
                 control={form.control}
                 name="email"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email*</FormLabel>
+                  <FormItem className="space-y-2">
+                    <FormLabel className="font-medium">Email*</FormLabel>
                     <FormControl>
-                      <Input placeholder="john.doe@example.com" {...field} />
+                      <Input 
+                        placeholder="john.doe@example.com" 
+                        {...field} 
+                        className="bg-background/50 border-border/50 focus-visible:ring-primary/70 transition-all"
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-destructive/90" />
                   </FormItem>
                 )}
               />
@@ -149,12 +170,16 @@ export default function CandidateForm({ candidate, isEditing = false }: Candidat
                 control={form.control}
                 name="phone"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone</FormLabel>
+                  <FormItem className="space-y-2">
+                    <FormLabel className="font-medium">Phone</FormLabel>
                     <FormControl>
-                      <Input placeholder="+1 (555) 123-4567" {...field} />
+                      <Input 
+                        placeholder="+1 (555) 123-4567" 
+                        {...field} 
+                        className="bg-background/50 border-border/50 focus-visible:ring-primary/70 transition-all"
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-destructive/90" />
                   </FormItem>
                 )}
               />
@@ -163,15 +188,15 @@ export default function CandidateForm({ candidate, isEditing = false }: Candidat
                 control={form.control}
                 name="status"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status*</FormLabel>
+                  <FormItem className="space-y-2">
+                    <FormLabel className="font-medium">Status*</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-background/50 border-border/50 focus-visible:ring-primary/70 transition-all">
                           <SelectValue placeholder="Select status" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="bg-background/95 backdrop-blur-xl border-border/50">
                         <SelectItem value="NEW">New</SelectItem>
                         <SelectItem value="CONTACTED">Contacted</SelectItem>
                         <SelectItem value="INTERVIEW_SCHEDULED">Interview Scheduled</SelectItem>
@@ -182,7 +207,7 @@ export default function CandidateForm({ candidate, isEditing = false }: Candidat
                         <SelectItem value="ON_HOLD">On Hold</SelectItem>
                       </SelectContent>
                     </Select>
-                    <FormMessage />
+                    <FormMessage className="text-destructive/90" />
                   </FormItem>
                 )}
               />
@@ -191,12 +216,16 @@ export default function CandidateForm({ candidate, isEditing = false }: Candidat
                 control={form.control}
                 name="currentPosition"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Current Position</FormLabel>
+                  <FormItem className="space-y-2">
+                    <FormLabel className="font-medium">Current Position</FormLabel>
                     <FormControl>
-                      <Input placeholder="Software Engineer" {...field} />
+                      <Input 
+                        placeholder="Software Engineer" 
+                        {...field} 
+                        className="bg-background/50 border-border/50 focus-visible:ring-primary/70 transition-all"
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-destructive/90" />
                   </FormItem>
                 )}
               />
@@ -205,12 +234,16 @@ export default function CandidateForm({ candidate, isEditing = false }: Candidat
                 control={form.control}
                 name="currentCompany"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Current Company</FormLabel>
+                  <FormItem className="space-y-2">
+                    <FormLabel className="font-medium">Current Company</FormLabel>
                     <FormControl>
-                      <Input placeholder="Acme Inc." {...field} />
+                      <Input 
+                        placeholder="Acme Inc." 
+                        {...field} 
+                        className="bg-background/50 border-border/50 focus-visible:ring-primary/70 transition-all"
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-destructive/90" />
                   </FormItem>
                 )}
               />
@@ -219,12 +252,17 @@ export default function CandidateForm({ candidate, isEditing = false }: Candidat
                 control={form.control}
                 name="experienceYears"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Experience (Years)</FormLabel>
+                  <FormItem className="space-y-2">
+                    <FormLabel className="font-medium">Experience (Years)</FormLabel>
                     <FormControl>
-                      <Input type="number" min="0" {...field} />
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        {...field} 
+                        className="bg-background/50 border-border/50 focus-visible:ring-primary/70 transition-all"
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-destructive/90" />
                   </FormItem>
                 )}
               />
@@ -233,12 +271,16 @@ export default function CandidateForm({ candidate, isEditing = false }: Candidat
                 control={form.control}
                 name="educationLevel"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Education Level</FormLabel>
+                  <FormItem className="space-y-2">
+                    <FormLabel className="font-medium">Education Level</FormLabel>
                     <FormControl>
-                      <Input placeholder="Bachelor's Degree" {...field} />
+                      <Input 
+                        placeholder="Bachelor's Degree" 
+                        {...field} 
+                        className="bg-background/50 border-border/50 focus-visible:ring-primary/70 transition-all"
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-destructive/90" />
                   </FormItem>
                 )}
               />
@@ -247,12 +289,16 @@ export default function CandidateForm({ candidate, isEditing = false }: Candidat
                 control={form.control}
                 name="educationField"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Education Field</FormLabel>
+                  <FormItem className="space-y-2">
+                    <FormLabel className="font-medium">Education Field</FormLabel>
                     <FormControl>
-                      <Input placeholder="Computer Science" {...field} />
+                      <Input 
+                        placeholder="Computer Science" 
+                        {...field} 
+                        className="bg-background/50 border-border/50 focus-visible:ring-primary/70 transition-all"
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-destructive/90" />
                   </FormItem>
                 )}
               />
@@ -262,28 +308,36 @@ export default function CandidateForm({ candidate, isEditing = false }: Candidat
               control={form.control}
               name="skills"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Skills</FormLabel>
+                <FormItem className="space-y-2">
+                  <FormLabel className="font-medium">Skills</FormLabel>
                   <FormControl>
-                    <Input placeholder="JavaScript, React, Node.js" {...field} />
+                    <Input 
+                      placeholder="JavaScript, React, Node.js" 
+                      {...field} 
+                      className="bg-background/50 border-border/50 focus-visible:ring-primary/70 transition-all"
+                    />
                   </FormControl>
-                  <FormDescription>Enter skills separated by commas</FormDescription>
-                  <FormMessage />
+                  <FormDescription className="text-muted-foreground/80">Enter skills separated by commas</FormDescription>
+                  <FormMessage className="text-destructive/90" />
                 </FormItem>
               )}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
                 name="resumeUrl"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Resume URL</FormLabel>
+                  <FormItem className="space-y-2">
+                    <FormLabel className="font-medium">Resume URL</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://example.com/resume.pdf" {...field} />
+                      <Input 
+                        placeholder="https://example.com/resume.pdf" 
+                        {...field} 
+                        className="bg-background/50 border-border/50 focus-visible:ring-primary/70 transition-all"
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-destructive/90" />
                   </FormItem>
                 )}
               />
@@ -292,12 +346,16 @@ export default function CandidateForm({ candidate, isEditing = false }: Candidat
                 control={form.control}
                 name="linkedInUrl"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>LinkedIn URL</FormLabel>
+                  <FormItem className="space-y-2">
+                    <FormLabel className="font-medium">LinkedIn URL</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://linkedin.com/in/johndoe" {...field} />
+                      <Input 
+                        placeholder="https://linkedin.com/in/johndoe" 
+                        {...field} 
+                        className="bg-background/50 border-border/50 focus-visible:ring-primary/70 transition-all"
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-destructive/90" />
                   </FormItem>
                 )}
               />
@@ -306,12 +364,16 @@ export default function CandidateForm({ candidate, isEditing = false }: Candidat
                 control={form.control}
                 name="githubUrl"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>GitHub URL</FormLabel>
+                  <FormItem className="space-y-2">
+                    <FormLabel className="font-medium">GitHub URL</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://github.com/johndoe" {...field} />
+                      <Input 
+                        placeholder="https://github.com/johndoe" 
+                        {...field} 
+                        className="bg-background/50 border-border/50 focus-visible:ring-primary/70 transition-all"
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-destructive/90" />
                   </FormItem>
                 )}
               />
@@ -320,12 +382,16 @@ export default function CandidateForm({ candidate, isEditing = false }: Candidat
                 control={form.control}
                 name="portfolioUrl"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Portfolio URL</FormLabel>
+                  <FormItem className="space-y-2">
+                    <FormLabel className="font-medium">Portfolio URL</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://johndoe.com" {...field} />
+                      <Input 
+                        placeholder="https://johndoe.com" 
+                        {...field} 
+                        className="bg-background/50 border-border/50 focus-visible:ring-primary/70 transition-all"
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-destructive/90" />
                   </FormItem>
                 )}
               />
@@ -335,25 +401,34 @@ export default function CandidateForm({ candidate, isEditing = false }: Candidat
               control={form.control}
               name="notes"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notes</FormLabel>
+                <FormItem className="space-y-2">
+                  <FormLabel className="font-medium">Notes</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Additional notes about the candidate"
-                      className="min-h-[100px]"
+                      className="min-h-[100px] bg-background/50 border-border/50 focus-visible:ring-primary/70 transition-all"
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-destructive/90" />
                 </FormItem>
               )}
             />
           </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button type="button" variant="outline" onClick={() => router.back()}>
+          <CardFooter className="flex justify-between border-t border-border/20 pt-6">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => router.back()}
+              className="border-border/50 bg-background/50 backdrop-blur-sm hover:bg-background/80 transition-all"
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting}
+              className="bg-primary/90 hover:bg-primary transition-all"
+            >
               {isSubmitting ? 'Saving...' : isEditing ? 'Update Candidate' : 'Create Candidate'}
             </Button>
           </CardFooter>

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -27,9 +27,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
-import { useInterviewOperations } from "@/hooks/useInterview";
+import { useInterview, useInterviewOperations } from "@/hooks/useInterview";
 import { UserSearchCombobox } from "@/components/UserSearchCombobox";
-import { ArrowLeft, CalendarClock, Users } from "lucide-react";
+import { ArrowLeft, CalendarClock, Users, Loader2 } from "lucide-react";
 
 // Form schema validation
 const formSchema = z.object({
@@ -44,10 +44,13 @@ const formSchema = z.object({
     .min(15, { message: "Duration must be at least 15 minutes" }),
 });
 
-export default function CreateInterviewPage() {
+export default function EditInterviewPage() {
   const router = useRouter();
-  const { createInterviewAsync, isCreatingInterview } =
-    useInterviewOperations();
+  const params = useParams();
+  const id = params?.id as string;
+  
+  const { data: interview, isLoading: isLoadingInterview } = useInterview(id);
+  const { updateInterview, isUpdating } = useInterviewOperations();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Initialize form
@@ -62,6 +65,19 @@ export default function CreateInterviewPage() {
     },
   });
 
+  // Load interview data when available
+  useEffect(() => {
+    if (interview) {
+      form.reset({
+        title: interview.title,
+        description: interview.description,
+        candidateId: interview.candidateId || "",
+        scheduledDate: new Date(interview.scheduledDate),
+        duration: interview.duration,
+      });
+    }
+  }, [interview, form]);
+
   // Handle form submission
   const onSubmit = async (data) => {
     try {
@@ -70,30 +86,69 @@ export default function CreateInterviewPage() {
       // Format the data for API
       const interviewData = {
         ...data,
-        // Remove startTime and endTime as they don't exist in the Prisma schema
-        status: "SCHEDULED", // Use uppercase to match the enum in Prisma
       };
 
-      // Create the interview
-      const result = await createInterviewAsync(interviewData);
-
-      toast.success("Interview Created", {
-        description: "The interview has been successfully scheduled.",
-      });
-
-      // Redirect to the interview details page
-      router.push(`/interviews/${result.id}`);
+      // Update the interview
+      await updateInterview(
+        { id, data: interviewData },
+        {
+          onSuccess: () => {
+            toast.success("Interview Updated", {
+              description: "The interview has been successfully updated.",
+            });
+            // Redirect to the interview details page
+            router.push(`/interviews/${id}`);
+          },
+          onError: (error) => {
+            console.error("Failed to update interview:", error);
+            toast.error("Error", {
+              description:
+                error.response?.data?.message ||
+                "Failed to update interview. Please try again.",
+            });
+          },
+        }
+      );
     } catch (error) {
-      console.error("Failed to create interview:", error);
+      console.error("Failed to update interview:", error);
       toast.error("Error", {
         description:
           error.response?.data?.message ||
-          "Failed to create interview. Please try again.",
+          "Failed to update interview. Please try again.",
       });
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (isLoadingInterview) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-900/30 via-background to-violet-900/20 dark:from-indigo-950/50 dark:via-background dark:to-violet-950/40 relative overflow-hidden">
+        {/* Abstract Background Elements */}
+        <div className="absolute top-20 left-10 w-72 h-72 bg-purple-600/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-10 right-10 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute top-1/3 right-1/4 w-64 h-64 bg-emerald-600/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/3 left-1/4 w-64 h-64 bg-amber-600/10 rounded-full blur-3xl" />
+
+        <div className="container mx-auto py-8 px-4 relative z-10 flex items-center justify-center min-h-screen">
+          <Card className="w-full max-w-md border border-indigo-500/20 bg-background/40 backdrop-blur-xl shadow-lg relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 pointer-events-none" />
+            <CardContent className="flex flex-col items-center justify-center p-10 text-center relative z-10">
+              <div className="h-12 w-12 animate-spin text-indigo-600 dark:text-indigo-400 mb-4">
+                <Loader2 className="h-12 w-12" />
+              </div>
+              <p className="text-xl font-medium bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-600 dark:from-indigo-400 dark:via-purple-400 dark:to-violet-400">
+                Loading interview details...
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Please wait while we prepare the information
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900/30 via-background to-violet-900/20 dark:from-indigo-950/50 dark:via-background dark:to-violet-950/40 relative overflow-hidden">
@@ -108,10 +163,10 @@ export default function CreateInterviewPage() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-600 dark:from-indigo-400 dark:via-purple-400 dark:to-violet-400 flex items-center gap-2">
               <CalendarClock className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
-              Create New Interview
+              Edit Interview
             </h1>
             <p className="text-muted-foreground mt-1">
-              Schedule a new interview session with a candidate
+              Update the details of this interview
             </p>
           </div>
 
@@ -120,7 +175,7 @@ export default function CreateInterviewPage() {
             onClick={() => router.back()}
             className="backdrop-blur-sm bg-background/50 border-indigo-500/30 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50/20 dark:hover:bg-indigo-950/20 transition-all duration-300"
           >
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Interviews
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Interview
           </Button>
         </div>
 
@@ -132,7 +187,7 @@ export default function CreateInterviewPage() {
               Interview Details
             </CardTitle>
             <CardDescription className="text-indigo-700/70 dark:text-indigo-300/70">
-              Fill in the details to schedule a new interview with a candidate.
+              Update the details of this interview session
             </CardDescription>
           </CardHeader>
           <CardContent className="relative z-10">
@@ -271,7 +326,7 @@ export default function CreateInterviewPage() {
                     disabled={isSubmitting}
                     className="backdrop-blur-sm bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md shadow-indigo-500/20 border-0 transition-all duration-300 hover:scale-105"
                   >
-                    {isSubmitting ? "Creating..." : "Create Interview"}
+                    {isSubmitting ? "Updating..." : "Update Interview"}
                   </Button>
                 </div>
               </form>

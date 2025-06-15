@@ -288,6 +288,18 @@ export default function InterviewPage({ params }: { params: { id: string } }) {
                   Join Interview
                 </Button>
 
+                {interview.status === "COMPLETED" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-1 backdrop-blur-sm bg-background/50 border-blue-500/30 text-blue-600 dark:text-blue-300 hover:bg-blue-50/20 dark:hover:bg-blue-950/20 transition-all duration-300"
+                    onClick={() => router.push(`/submissions/${id}/results`)}
+                  >
+                    <BarChart3 className="h-4 w-4 mr-1" />
+                    View Results
+                  </Button>
+                )}
+
                 <Button
                   variant="outline"
                   size="sm"
