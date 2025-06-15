@@ -16,7 +16,7 @@ import { Calendar, Clock, User, FileText, Edit, Trash2, Share2, Copy, Plus, X, A
 import { QuestionSelector } from '@/components/questions/QuestionSelector';
 import { InterviewNotes } from '@/components/interviews/InterviewNotes';
 import { format } from 'date-fns';
-import SendInvitationDialog from '@/components/interviews/SendInvitationDialog';
+import InterviewService from '@/services/interviewService';
 
 export default function InterviewDetailsPage() {
   const router = useRouter();
@@ -24,17 +24,13 @@ export default function InterviewDetailsPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('details');
   const [showQuestionSelector, setShowQuestionSelector] = useState(false);
-  const [showSendInvitationDialog, setShowSendInvitationDialog] = useState(false);
+  const [isSendingInvitation, setIsSendingInvitation] = useState(false);
   
   // Fetch interview data
   const { data: interview, isLoading: isLoadingInterview } = useInterview(id as string);
   
   // Fetch submissions
   const { data: submissions, isLoading: isLoadingSubmissions } = useInterviewSubmissions(id as string);
-  
-  // Fetch all candidates for the invitation dialog
-  const { data: candidatesData } = useAllCandidates();
-  const candidates = candidatesData?.candidates || [];
   
   // Interview operations
   const { 
@@ -69,6 +65,27 @@ export default function InterviewDetailsPage() {
     const link = `${window.location.origin}/interviews/${id}/join`;
     navigator.clipboard.writeText(link);
     toast.success('Interview link copied to clipboard');
+  };
+  
+  // Handle sending invitation directly
+  const handleSendInvitation = async () => {
+    if (!interview?.candidateId) {
+      toast.error('No candidate associated with this interview');
+      return;
+    }
+    
+    try {
+      setIsSendingInvitation(true);
+      
+      const result = await InterviewService.sendInterviewInvitation(id as string, interview.candidateId);
+      
+      toast.success(`Invitation sent successfully to candidate`);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to send invitation');
+      console.error('Send invitation error:', err);
+    } finally {
+      setIsSendingInvitation(false);
+    }
   };
 
   // Handle adding questions to interview
@@ -155,15 +172,43 @@ export default function InterviewDetailsPage() {
               Copy Link
             </Button>
             
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-1"
-              onClick={() => setShowSendInvitationDialog(true)}
-            >
-              <Share2 className="h-4 w-4 mr-1" />
-              Send Invitation
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-1"
+                  disabled={isSendingInvitation || !interview.candidateId}
+                >
+                  <Share2 className="h-4 w-4 mr-1" />
+                  Send Invitation
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Send Interview Invitation</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Send an invitation email to the candidate associated with this interview?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleSendInvitation}
+                    disabled={isSendingInvitation}
+                  >
+                    {isSendingInvitation ? (
+                      <>
+                        <span className="animate-spin mr-2">⏳</span>
+                        Sending...
+                      </>
+                    ) : (
+                      'Send'
+                    )}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             
             <Button
               variant="outline"
@@ -581,14 +626,6 @@ export default function InterviewDetailsPage() {
           <InterviewNotes interviewId={id as string} />
         </TabsContent>
       </Tabs>
-      
-      {/* Send Invitation Dialog */}
-      <SendInvitationDialog
-        open={showSendInvitationDialog}
-        onClose={() => setShowSendInvitationDialog(false)}
-        interviewId={id as string}
-        candidates={candidates}
-      />
     </div>
   );
 }

@@ -197,6 +197,11 @@ const validateAccessToken = async (prisma, accessToken) => {
   if (interview.accessTokenExpires && new Date() > new Date(interview.accessTokenExpires)) {
     throw new UnauthorizedError('Access token has expired');
   }
+  
+  // Check if interview is already completed
+  if (interview.status === 'COMPLETED') {
+    throw new UnauthorizedError('This interview has already been completed');
+  }
 
   // Add type field to questions for frontend compatibility
   if (interview.questions) {

@@ -189,14 +189,32 @@ export const CandidateInterview = ({ token }: CandidateInterviewProps) => {
   }
   
   if (error) {
+    // Check if the error is related to a completed interview or expired token
+    const isCompletedError = error.includes('already been completed');
+    const isExpiredError = error.includes('token has expired');
+    
+    let errorTitle = 'Error';
+    let errorMessage = 'There was an error accessing this interview.';
+    
+    if (isCompletedError) {
+      errorTitle = 'Interview Already Completed';
+      errorMessage = 'This interview has already been completed and cannot be accessed again. Please contact the recruiter if you need to discuss your submission.';
+    } else if (isExpiredError) {
+      errorTitle = 'Interview Access Expired';
+      errorMessage = 'The access link for this interview has expired. Please contact the recruiter to request a new invitation if needed.';
+    }
+    
     return (
       <div className="container mx-auto py-4 px-4">
         <Card className="my-8">
           <CardHeader>
-            <CardTitle className="text-red-600">Error</CardTitle>
+            <CardTitle className="text-red-600">{errorTitle}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="mb-4">{error}</p>
+            <Alert variant="destructive" className="my-4">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+            <p className="mb-4">{errorMessage}</p>
             <Button 
               variant="default" 
               onClick={() => router.push('/')} 
