@@ -59,11 +59,11 @@ export default function DashboardPage() {
 
   // Filter interviews by status
   const upcomingInterviews = interviewsData?.data.filter(
-    (interview) => interview.status === 'scheduled'
+    (interview) => interview.status === 'SCHEDULED'
   ) || [];
   
   const pastInterviews = interviewsData?.data.filter(
-    (interview) => ['completed', 'cancelled'].includes(interview.status)
+    (interview) => ["COMPLETED", "CANCELLED"].includes(interview.status)
   ) || [];
 
   return (
@@ -93,7 +93,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
-              {pastInterviews.filter(i => i.status === 'completed').length}
+              {pastInterviews.filter(i => i.status === 'COMPLETED').length}
             </div>
           </CardContent>
         </Card>
@@ -106,7 +106,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-3xl font-bold">
               {pastInterviews.length > 0 
-                ? `${Math.round((pastInterviews.filter(i => i.status === 'completed').length / pastInterviews.length) * 100)}%` 
+                ? `${Math.round((pastInterviews.filter(i => i.status === 'COMPLETED').length / pastInterviews.length) * 100)}%` 
                 : 'N/A'}
             </div>
           </CardContent>
@@ -156,12 +156,12 @@ export default function DashboardPage() {
                     <div className="space-y-2">
                       <div className="flex items-center">
                         <CalendarIcon className="mr-2 h-4 w-4 opacity-70" />
-                        <span>{formatInterviewDate(interview.startTime)}</span>
+                        <span>{formatInterviewDate(interview.candidateStartedAt)}</span>
                       </div>
                       <div className="flex items-center">
                         <ClockIcon className="mr-2 h-4 w-4 opacity-70" />
                         <span>
-                          {formatInterviewTime(interview.startTime)} - {formatInterviewTime(interview.endTime)}
+                          {formatInterviewTime(interview.candidateStartedAt)} - {formatInterviewTime(interview.candidateCompletedAt)}
                         </span>
                       </div>
                       <div className="flex items-center">
@@ -214,22 +214,22 @@ export default function DashboardPage() {
                     <div className="space-y-2">
                       <div className="flex items-center">
                         <CalendarIcon className="mr-2 h-4 w-4 opacity-70" />
-                        <span>{formatInterviewDate(interview.startTime)}</span>
+                        <span>{formatInterviewDate(interview.candidateStartedAt)}</span>
                       </div>
                       <div className="flex items-center">
                         <ClockIcon className="mr-2 h-4 w-4 opacity-70" />
                         <span>
-                          {formatInterviewTime(interview.startTime)} - {formatInterviewTime(interview.endTime)}
+                          {formatInterviewTime(interview.candidateStartedAt)} - {formatInterviewTime(interview.candidateCompletedAt)}
                         </span>
                       </div>
                       <div className="flex items-center">
-                        {interview.status === 'completed' ? (
+                        {interview.status === 'COMPLETED' ? (
                           <CheckCircleIcon className="mr-2 h-4 w-4 text-green-500" />
                         ) : (
                           <XCircleIcon className="mr-2 h-4 w-4 text-red-500" />
                         )}
                         <span>
-                          {interview.status === 'completed' ? 'Completed' : 'Cancelled'}
+                          {interview.status === 'COMPLETED' ? 'Completed' : 'Cancelled'}
                         </span>
                       </div>
                     </div>

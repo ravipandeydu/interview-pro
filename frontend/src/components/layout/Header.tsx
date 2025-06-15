@@ -55,10 +55,10 @@ export function Header() {
                       Interviews
                     </Link>
                     <Link
-                      href="/interviews/new"
+                      href="/questions"
                       className="transition-colors hover:text-foreground/80 text-foreground/60"
                     >
-                      Create Interview
+                      Questions
                     </Link>
                     <Link
                       href="/history"
