@@ -354,6 +354,50 @@ export class InterviewService {
       throw error;
     }
   }
+
+  /**
+   * Detect plagiarism in a submission
+   * @param submissionId Submission ID to check for plagiarism
+   * @returns Plagiarism report with score and matches
+   */
+  static async detectPlagiarism(submissionId: string): Promise<{
+    score: number;
+    matches: {
+      source: string;
+      similarity: number;
+      matchedText: string;
+    }[];
+  }> {
+    try {
+      const { data } = await api.post(`plagiarism/detect/${submissionId}`);
+      return data.data;
+    } catch (error) {
+      console.error('Detect plagiarism error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get plagiarism report for a submission
+   * @param submissionId Submission ID
+   * @returns Plagiarism report with score and matches
+   */
+  static async getPlagiarismReport(submissionId: string): Promise<{
+    score: number;
+    matches: {
+      source: string;
+      similarity: number;
+      matchedText: string;
+    }[];
+  }> {
+    try {
+      const { data } = await api.get(`plagiarism/report/${submissionId}`);
+      return data.data;
+    } catch (error) {
+      console.error('Get plagiarism report error:', error);
+      throw error;
+    }
+  }
 }
 
 export default InterviewService;

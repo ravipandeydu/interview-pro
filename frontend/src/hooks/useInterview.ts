@@ -11,6 +11,7 @@ export const interviewKeys = {
   submissions: (interviewId: string) => [...interviewKeys.detail(interviewId), 'submissions'] as const,
   submission: (submissionId: string) => [...interviewKeys.all, 'submission', submissionId] as const,
   result: (interviewId: string) => [...interviewKeys.detail(interviewId), 'result'] as const,
+  plagiarismReport: (submissionId: string) => [...interviewKeys.submission(submissionId), 'plagiarism'] as const,
 };
 
 /**
@@ -220,6 +221,20 @@ export function useSubmissionOperations() {
     },
   });
 
+  // Detect plagiarism mutation
+  const detectPlagiarismMutation = useMutation({
+    mutationFn: InterviewService.detectPlagiarism,
+    onSuccess: (plagiarismReport, submissionId) => {
+      // Update the plagiarism report in the cache
+      queryClient.setQueryData(interviewKeys.plagiarismReport(submissionId), plagiarismReport);
+      // Invalidate the submission to refetch with updated plagiarism report
+      queryClient.invalidateQueries({ queryKey: interviewKeys.submission(submissionId) });
+    },
+    onError: (error) => {
+      console.error('Detect plagiarism failed:', error);
+    },
+  });
+
   return {
     // Submit answer
     submitAnswer: submitAnswerMutation.mutate,
@@ -238,6 +253,12 @@ export function useSubmissionOperations() {
     analyzeSubmissionAsync: analyzeSubmissionMutation.mutateAsync,
     isAnalyzingSubmission: analyzeSubmissionMutation.isPending,
     analyzeSubmissionError: analyzeSubmissionMutation.error,
+
+    // Detect plagiarism
+    detectPlagiarism: detectPlagiarismMutation.mutate,
+    detectPlagiarismAsync: detectPlagiarismMutation.mutateAsync,
+    isDetectingPlagiarism: detectPlagiarismMutation.isPending,
+    detectPlagiarismError: detectPlagiarismMutation.error,
   };
 }
 
@@ -275,6 +296,19 @@ export function useInterviewResult(interviewId: string) {
     queryKey: interviewKeys.result(interviewId),
     queryFn: () => InterviewService.getInterviewResult(interviewId),
     enabled: !!interviewId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+}
+
+/**
+ * Hook for fetching plagiarism report for a submission
+ */
+export function usePlagiarismReport(submissionId: string) {
+  return useQuery({
+    queryKey: interviewKeys.plagiarismReport(submissionId),
+    queryFn: () => InterviewService.getPlagiarismReport(submissionId),
+    enabled: !!submissionId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });

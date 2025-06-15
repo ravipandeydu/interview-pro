@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useInterview, useInterviewResult, useInterviewSubmissions, useSubmissionOperations } from '@/hooks/useInterview';
+import { useInterview, useInterviewResult, useInterviewSubmissions, useSubmissionOperations, usePlagiarismReport } from '@/hooks/useInterview';
 import { useFeedbackOperations, useInterviewFeedback } from '@/hooks/useFeedback';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +15,8 @@ import { Editor } from '@monaco-editor/react';
 import { TipTapEditor } from '@/components/TipTapEditor';
 import { Submission } from '@/services/interviewService';
 import { FeedbackUI, InterviewFeedbackUI, FeedbackDialog, InterviewFeedbackDialog, CustomFeedbackForm } from '@/components/feedback';
-import { CheckCircle, XCircle, AlertCircle, Download, FileText, ActivitySquare, ShieldCheck, Lock, Gauge, Sparkles } from 'lucide-react';
+import { PlagiarismDialog } from '@/components/plagiarism';
+import { CheckCircle, XCircle, AlertCircle, Download, FileText, ActivitySquare, ShieldCheck, Lock, Gauge, Sparkles, AlertTriangle } from 'lucide-react';
 
 export default function SubmissionResultsPage() {
   const router = useRouter();
@@ -36,8 +37,15 @@ export default function SubmissionResultsPage() {
   // Fetch interview feedback
   const { data: interviewFeedback, isLoading: isLoadingInterviewFeedback } = useInterviewFeedback(id as string);
   
-  // PDF generation and submission analysis
-  const { generatePdfReport, isGeneratingPdfReport, analyzeSubmission, isAnalyzingSubmission } = useSubmissionOperations();
+  // PDF generation, submission analysis, and plagiarism detection
+  const { 
+    generatePdfReport, 
+    isGeneratingPdfReport, 
+    analyzeSubmission, 
+    isAnalyzingSubmission,
+    detectPlagiarismMutation,
+    isDetectingPlagiarism
+  } = useSubmissionOperations();
   
   // Feedback operations
   const {
@@ -75,6 +83,19 @@ export default function SubmissionResultsPage() {
       onError: (error) => {
         toast.error('Failed to analyze submission');
         console.error('Analyze submission error:', error);
+      },
+    });
+  };
+  
+  // Handle plagiarism detection
+  const handleDetectPlagiarism = (submissionId: string) => {
+    detectPlagiarismMutation(submissionId, {
+      onSuccess: () => {
+        toast.success('Plagiarism detection completed');
+      },
+      onError: (error) => {
+        toast.error('Failed to detect plagiarism');
+        console.error('Plagiarism detection error:', error);
       },
     });
   };
@@ -266,20 +287,53 @@ export default function SubmissionResultsPage() {
             <CardDescription>Similarity score</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold">
-              {submissions.some(s => s.plagiarismReport) 
-                ? `${Math.max(...submissions.map(s => s.plagiarismReport?.score || 0))}%` 
-                : 'N/A'}
+            <div className="flex flex-col">
+              <div className="text-4xl font-bold">
+                {submissions.some(s => s.plagiarismReport) 
+                  ? `${Math.max(...submissions.map(s => s.plagiarismReport?.score || 0))}%` 
+                  : 'N/A'}
+              </div>
+              {submissions.some(s => s.plagiarismReport) && (
+                <div className="mt-2 text-sm text-muted-foreground">
+                  {submissions.filter(s => s.plagiarismReport).length} of {submissions.length} submissions checked
+                </div>
+              )}
+              {!submissions.some(s => s.plagiarismReport) && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => {
+                    if (submissions.length > 0) {
+                      handleDetectPlagiarism(submissions[0].id);
+                    }
+                  }}
+                  disabled={isDetectingPlagiarism || submissions.length === 0}
+                >
+                  {isDetectingPlagiarism ? (
+                    <>
+                      <div className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-primary rounded-full"></div>
+                      Checking...
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle className="mr-2 h-4 w-4" />
+                      Check for Plagiarism
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
 
       <Tabs defaultValue="overview" className="w-full" onValueChange={setActiveTab}>
-        <TabsList className="grid w-full md:w-[600px] grid-cols-3">
+        <TabsList className="grid w-full md:w-[800px] grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="submissions">Submissions</TabsTrigger>
           <TabsTrigger value="ai-feedback">AI Feedback</TabsTrigger>
+          <TabsTrigger value="plagiarism">Plagiarism</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview" className="mt-6">
@@ -558,6 +612,32 @@ export default function SubmissionResultsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
+                {interviewFeedback && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Comprehensive Interview Feedback</CardTitle>
+                      <CardDescription>
+                        Overall assessment of your interview performance
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <InterviewFeedbackDialog
+                        trigger={
+                          <Button variant="outline">
+                            <FileText className="mr-2 h-4 w-4" />
+                            View Full Interview Feedback
+                          </Button>
+                        }
+                        title="Comprehensive Interview Feedback"
+                        description="AI-generated analysis of your overall interview performance"
+                        feedback={interviewFeedback}
+                        onGenerate={handleGenerateInterviewFeedback}
+                        isLoading={isGeneratingInterviewFeedback}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+                
                 {submissions.map((submission) => {
                   if (!submission.aiAnalysis) return null;
                   const question = interview.questions.find(q => q.id === submission.questionId);
@@ -618,6 +698,107 @@ export default function SubmissionResultsPage() {
                         </>
                       )}
                     </Button>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="plagiarism" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Plagiarism Reports</CardTitle>
+              <CardDescription>
+                Plagiarism detection results for code submissions
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {submissions.map((submission) => {
+                  // Only show coding submissions
+                  const question = interview.questions.find(q => q.id === submission.questionId);
+                  if (!question || question.type !== 'coding') return null;
+                  
+                  // Use the usePlagiarismReport hook to fetch the plagiarism report
+                  const { data: plagiarismReport, isLoading: isLoadingPlagiarismReport } = usePlagiarismReport(submission.id);
+                  
+                  return (
+                    <Card key={submission.id} className="mb-6">
+                      <CardHeader>
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <CardTitle>{question.title}</CardTitle>
+                            <CardDescription>
+                              {question.type} · {question.difficulty} · {question.points} points
+                            </CardDescription>
+                          </div>
+                          {plagiarismReport && (
+                            <div className={`px-2 py-1 rounded text-xs font-medium ${
+                              plagiarismReport.score < 15 ? 'bg-green-100 text-green-800' : 
+                              plagiarismReport.score < 30 ? 'bg-yellow-100 text-yellow-800' : 
+                              'bg-red-100 text-red-800'
+                            }`}>
+                              {plagiarismReport.score}% similarity
+                            </div>
+                          )}
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          {isLoadingPlagiarismReport ? (
+                            <div className="flex flex-col items-center justify-center py-8">
+                              <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+                              <p className="text-muted-foreground">Loading plagiarism report...</p>
+                            </div>
+                          ) : plagiarismReport ? (
+                            <>
+                              <div className="text-sm text-muted-foreground mb-4">
+                                Report generated on {new Date(plagiarismReport.createdAt).toLocaleString()}
+                              </div>
+                              <PlagiarismDialog 
+                                report={plagiarismReport}
+                                title={`Plagiarism Report: ${question.title}`}
+                                onDetect={() => handleDetectPlagiarism(submission.id)}
+                                isLoading={isDetectingPlagiarism}
+                                trigger={
+                                  <Button variant="outline">
+                                    <AlertTriangle className="mr-2 h-4 w-4" />
+                                    View Full Report
+                                  </Button>
+                                }
+                              />
+                            </>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center py-8">
+                              <AlertTriangle className="h-12 w-12 text-yellow-500 mb-4" />
+                              <p className="text-muted-foreground mb-4">No plagiarism report available for this submission.</p>
+                              <Button
+                                onClick={() => handleDetectPlagiarism(submission.id)}
+                                disabled={isDetectingPlagiarism}
+                              >
+                                {isDetectingPlagiarism ? (
+                                  <>
+                                    <div className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-white rounded-full"></div>
+                                    Checking...
+                                  </>
+                                ) : (
+                                  <>
+                                    <AlertTriangle className="mr-2 h-4 w-4" />
+                                    Check for Plagiarism
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+                {submissions.filter(s => interview.questions.find(q => q.id === s.questionId)?.type === 'coding').length === 0 && (
+                  <div className="text-center py-6">
+                    <p className="text-gray-500 mb-4">No coding submissions available for plagiarism detection.</p>
                   </div>
                 )}
               </div>
