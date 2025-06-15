@@ -279,7 +279,7 @@ export class InterviewService {
    */
   static async generatePdfReport(interviewId: string): Promise<{ url: string }> {
     try {
-      const { data } = await api.post(`interviews/${interviewId}/pdf`);
+      const { data } = await api.get(`interviews/${interviewId}/pdf`);
       return data.data;
     } catch (error) {
       console.error('Generate PDF report error:', error);

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useInterview, useInterviewResult, useInterviewSubmissions, useSubmissionOperations, usePlagiarismReport } from '@/hooks/useInterview';
+import { useInterview, useInterviewResult, useInterviewSubmissions, useSubmissionOperations } from '@/hooks/useInterview';
 import { useFeedbackOperations, useInterviewFeedback } from '@/hooks/useFeedback';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,7 +16,7 @@ import { TipTapEditor } from '@/components/TipTapEditor';
 import { Submission } from '@/services/interviewService';
 import { FeedbackUI, InterviewFeedbackUI, FeedbackDialog, InterviewFeedbackDialog, CustomFeedbackForm } from '@/components/feedback';
 import { PlagiarismDialog } from '@/components/plagiarism';
-import { CheckCircle, XCircle, AlertCircle, Download, FileText, ActivitySquare, ShieldCheck, Lock, Gauge, Sparkles, AlertTriangle } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, Download, FileText, ActivitySquare, ShieldCheck, Lock, Gauge, Sparkles, AlertTriangle, Loader2 } from 'lucide-react';
 
 export default function SubmissionResultsPage() {
   const router = useRouter();
@@ -348,7 +348,7 @@ export default function SubmissionResultsPage() {
               <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-medium">Overall Feedback</h3>
-                  <p className="mt-2">{result.feedback}</p>
+                  <p className="mt-2">{result.recommendation}</p>
                 </div>
                 
                 <Separator />
@@ -720,8 +720,9 @@ export default function SubmissionResultsPage() {
                   const question = interview.questions.find(q => q.id === submission.questionId);
                   if (!question || question.type !== 'coding') return null;
                   
-                  // Use the usePlagiarismReport hook to fetch the plagiarism report
-                  const { data: plagiarismReport, isLoading: isLoadingPlagiarismReport } = usePlagiarismReport(submission.id);
+                  // Get plagiarism report from the submission data instead of using a hook
+                  const plagiarismReport = submission.plagiarismReport;
+                  const isLoadingPlagiarismReport = false; // We're not loading it dynamically
                   
                   return (
                     <Card key={submission.id} className="mb-6">

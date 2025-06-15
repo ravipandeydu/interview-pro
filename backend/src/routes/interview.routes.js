@@ -362,9 +362,71 @@ router.get('/:id/submissions', authenticate, authorize(['RECRUITER', 'ADMIN']), 
 
 /**
  * @swagger
+ * /api/v1/interviews/{id}/result:
+ *   get:
+ *     summary: Get interview result
+ *     tags: [Interviews]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Interview ID
+ *     responses:
+ *       200:
+ *         description: Interview result retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: Interview result retrieved successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     interview:
+ *                       type: object
+ *                     responses:
+ *                       type: array
+ *                     feedback:
+ *                       type: object
+ *                     overallScore:
+ *                       type: number
+ *                     categoryScores:
+ *                       type: object
+ *                     strengths:
+ *                       type: array
+ *                     weaknesses:
+ *                       type: array
+ *                     suggestions:
+ *                       type: array
+ *                     recommendation:
+ *                       type: string
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
+ */
+router.get('/:id/result', authenticate, interviewController.getInterviewResult);
+
+/**
+ * @swagger
  * /api/v1/interviews/{id}/pdf:
- *   post:
- *     summary: Generate PDF report for an interview
+ *   get:
+ *     summary: Generate a PDF report for an interview
  *     tags: [Interviews]
  *     security:
  *       - bearerAuth: []
@@ -383,14 +445,28 @@ router.get('/:id/submissions', authenticate, authorize(['RECRUITER', 'ADMIN']), 
  *             schema:
  *               type: object
  *               properties:
- *                 url:
+ *                 status:
  *                   type: string
- *                   description: URL to access the generated PDF
+ *                   example: success
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: PDF report generated successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     pdfUrl:
+ *                       type: string
+ *                       example: https://example.com/reports/interview-report.pdf
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
  *       404:
- *         description: Interview not found
- *       403:
- *         description: Forbidden - requires recruiter or admin role
+ *         $ref: '#/components/responses/NotFoundError'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
  */
-router.post('/:id/pdf', authenticate, authorize(['RECRUITER', 'ADMIN']), interviewController.generatePdfReport);
+router.get('/:id/pdf', authenticate, interviewController.generatePdfReport);
 
 export default router;
