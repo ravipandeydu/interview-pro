@@ -33,11 +33,13 @@ export interface Question {
 export interface Submission {
   id: string;
   interviewId: string;
-  questionId: string;
-  candidateId: string;
-  answer: string;
+  questionId?: string;           // Backend property
+  interviewQuestionId?: string;  // Frontend property
+  candidateId?: string;
+  answer?: string;              // Frontend property
+  content?: string;             // Backend property
   language?: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status?: 'pending' | 'processing' | 'completed' | 'failed';
   executionTime?: number;
   executionResult?: {
     output: string;
@@ -51,6 +53,7 @@ export interface Submission {
       error?: string;
     }[];
   };
+  feedback?: string;
   aiAnalysis?: {
     score: number;
     feedback: string;
@@ -240,7 +243,18 @@ export class InterviewService {
   static async getInterviewSubmissions(interviewId: string): Promise<Submission[]> {
     try {
       const { data } = await api.get(`interviews/${interviewId}/submissions`);
-      return data.data;
+      
+      // Map backend response format to frontend format
+      const submissions = data.data.map((submission: any) => ({
+        ...submission,
+        // Ensure both property names are available
+        interviewQuestionId: submission.interviewQuestionId || submission.questionId,
+        questionId: submission.questionId || submission.interviewQuestionId,
+        answer: submission.answer || submission.content,
+        content: submission.content || submission.answer
+      }));
+      
+      return submissions;
     } catch (error) {
       console.error('Get interview submissions error:', error);
       throw error;

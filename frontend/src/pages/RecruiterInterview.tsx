@@ -32,7 +32,7 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { VideoChat } from '@/components/VideoChat';
 import { format } from 'date-fns';
-import { CodeEditor } from '@/components/CodeEditor';
+import { CollaborativeCodeEditor } from '@/components/CollaborativeCodeEditor';
 import { InterviewNotes } from '@/components/interviews/InterviewNotes';
 
 interface RecruiterInterviewProps {
@@ -205,11 +205,11 @@ export const RecruiterInterview = ({ interviewId }: RecruiterInterviewProps) => 
                         <Badge>{question.type}</Badge>
                       </div>
                       <CardDescription>
-                        {question.difficulty} • {question.points} points • {question.timeLimit} min
+                        {question.question.difficulty} • {question.points} points • {question.timeLimit} min
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <p>{question.description}</p>
+                      <p>{question.question.content}</p>
                     </CardContent>
                   </Card>
                 ))}
@@ -217,15 +217,17 @@ export const RecruiterInterview = ({ interviewId }: RecruiterInterviewProps) => 
               
               <TabsContent value="submissions" className="space-y-4">
                 {submissions && submissions.length > 0 ? (
-                  submissions.map((submission) => {
-                    const question = interview.questions.find(q => q.id === submission.questionId);
+                  submissions.map((submission, i) => {
+                    // Fix: Use the correct property name for finding the question
+                    const question = interview.questions.find(q => q.id === submission.interviewQuestionId);
+                    console.log(question.id, submission.interviewQuestionId, i, "question")
                     return (
                       <Card key={submission.id}>
                         <CardHeader>
                           <div className="flex justify-between">
-                            <CardTitle>{question?.title || 'Question'}</CardTitle>
+                            <CardTitle>{question?.question?.content || 'Question'}</CardTitle>
                             <Badge variant="outline">
-                              {new Date(submission.submittedAt).toLocaleString()}
+                              {new Date(submission.updatedAt).toLocaleString()}
                             </Badge>
                           </div>
                         </CardHeader>
@@ -234,17 +236,17 @@ export const RecruiterInterview = ({ interviewId }: RecruiterInterviewProps) => 
                             <h4 className="text-sm font-medium mb-1">Candidate's Answer:</h4>
                             {question?.type === 'coding' ? (
                               <div className="rounded-md">
-                                <CodeEditor
-                                  value={submission.answer}
-                                  language={submission.language || 'javascript'}
+                                <CollaborativeCodeEditor
+                                  interviewId={interviewId}
+                                  initialCode={submission.answer || submission.content}
+                                  initialLanguage={submission.language || 'javascript'}
                                   readOnly={true}
                                   height="200px"
-                                  onChange={() => {}}
                                 />
                               </div>
                             ) : (
                               <div className="bg-muted p-3 rounded-md">
-                                {submission.answer}
+                                {submission.answer || submission.content}
                               </div>
                             )}
                           </div>

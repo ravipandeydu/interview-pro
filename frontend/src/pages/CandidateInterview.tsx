@@ -32,6 +32,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CodeEditor } from '@/components/CodeEditor';
 import { VideoChat } from '@/components/VideoChat';
 import { InterviewNotes } from '@/components/interviews/InterviewNotes';
+import { CollaborativeCodeEditor } from '@/components/CollaborativeCodeEditor';
 
 const QuestionCard = ({ children, className, ...props }: React.ComponentProps<typeof Card>) => (
   <Card className={`mb-6 shadow-md ${className}`} {...props}>
@@ -422,12 +423,14 @@ export const CandidateInterview = ({ token }: CandidateInterviewProps) => {
                             </Select>
                           </div>
                           
-                          <CodeEditor
-                            value={responses[currentQuestion.id] || ''}
-                            onChange={(value) => handleResponseChange(currentQuestion.id, value)}
-                            language={selectedLanguage[currentQuestion.id] || 'javascript'}
+                          <CollaborativeCodeEditor
+                            interviewId={token}
+                            initialCode={responses[currentQuestion.id] || ''}
+                            initialLanguage={selectedLanguage[currentQuestion.id] || 'javascript'}
                             height="300px"
                             isCandidate={true}
+                            onCodeChange={(value) => handleResponseChange(currentQuestion.id, value)}
+                            onLanguageChange={(value) => handleLanguageChange(currentQuestion.id, value)}
                           />
                         </div>
                       ) : (
