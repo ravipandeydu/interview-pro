@@ -31,17 +31,213 @@ model User {
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 
-  // Relationships can be added here when other models are created
-  // For example: posts Post[] if you add a Post model later
+  // Relationships
+  interviews              Interview[] // Interviews created by this user (recruiter)
+  questions               Question[]  // Questions created by this user
+  candidateProfiles       CandidateProfile[] // Candidate profiles managed by this user
+  notes                   Note[]     // Notes created by this user
+  noteEdits               NoteEdit[] // Note edits made by this user
 
   @@map("users") // Maps to "users" table in PostgreSQL
 }
 
 // Enum for user roles
 enum Role {
-  USER
-  ADMIN
+  USER      // Regular user
+  RECRUITER // Recruiter role
+  ADMIN     // Admin role
 }
 
-// Note: Additional models can be added here as needed for the application
-// For example, if you need to store AI-related data or other entities
+// Candidate Profile model
+model CandidateProfile {
+  id                String    @id @default(uuid())
+  fullName          String
+  email             String    @unique
+  phone             String?
+  resumeUrl         String?
+  linkedInUrl       String?
+  githubUrl         String?
+  portfolioUrl      String?
+  skills            String[]  // Array of skills
+  experienceYears   Int?
+  currentPosition   String?
+  currentCompany    String?
+  educationLevel    String?
+  educationField    String?
+  notes             String?
+  status            CandidateStatus @default(NEW)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relationships
+  userId            String    // Reference to the recruiter who created/manages this profile
+  user              User      @relation(fields: [userId], references: [id])
+  interviews        Interview[] // Interviews scheduled for this candidate
+  
+  @@map("candidate_profiles")
+}
+
+// Enum for candidate status
+enum CandidateStatus {
+  NEW
+  CONTACTED
+  INTERVIEW_SCHEDULED
+  IN_PROCESS
+  OFFER_SENT
+  HIRED
+  REJECTED
+  ON_HOLD
+}
+
+// Interview model
+model Interview {
+  id                String    @id @default(uuid())
+  title             String
+  description       String?
+  scheduledDate     DateTime
+  duration          Int       // Duration in minutes
+  status            InterviewStatus @default(SCHEDULED)
+  feedbackSummary   String?
+  aiAnalysis        Json?     // JSON field for AI analysis results
+  recordingUrl      String?
+  transcriptUrl     String?
+  accessToken       String?   @unique // Unique token for candidate access
+  accessTokenExpires DateTime? // When the access token expires
+  candidateStartedAt DateTime? // When the candidate started the interview
+  candidateCompletedAt DateTime? // When the candidate completed the interview
+  invitationSentAt  DateTime? // When the invitation was sent to the candidate
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relationships
+  candidateId       String
+  candidate         CandidateProfile @relation(fields: [candidateId], references: [id])
+  recruiterId       String
+  recruiter         User      @relation(fields: [recruiterId], references: [id])
+  questions         InterviewQuestion[]
+  responses         Response[]
+  notes             Note[]    // Notes associated with this interview
+  
+  @@map("interviews")
+}
+
+// Enum for interview status
+enum InterviewStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+// Question model
+model Question {
+  id                String    @id @default(uuid())
+  content           String
+  category          QuestionCategory
+  difficulty        QuestionDifficulty @default(MEDIUM)
+  expectedAnswer    String?
+  tags              String[]  // Array of tags
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relationships
+  createdById       String
+  createdBy         User      @relation(fields: [createdById], references: [id])
+  interviewQuestions InterviewQuestion[]
+  
+  @@map("questions")
+}
+
+// Enum for question categories
+enum QuestionCategory {
+  TECHNICAL
+  BEHAVIORAL
+  SITUATIONAL
+  EXPERIENCE
+  CULTURAL_FIT
+  PROBLEM_SOLVING
+}
+
+// Enum for question difficulty
+enum QuestionDifficulty {
+  EASY
+  MEDIUM
+  HARD
+  EXPERT
+}
+
+// InterviewQuestion model (junction table between Interview and Question)
+model InterviewQuestion {
+  id                String    @id @default(uuid())
+  order             Int       // Order of question in the interview
+  customInstructions String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relationships
+  interviewId       String
+  interview         Interview @relation(fields: [interviewId], references: [id])
+  questionId        String
+  question          Question  @relation(fields: [questionId], references: [id])
+  response          Response?
+  
+  @@unique([interviewId, questionId])
+  @@map("interview_questions")
+}
+
+// Response model
+model Response {
+  id                String    @id @default(uuid())
+  content           String    // The candidate's response
+  recordingUrl      String?   // URL to audio recording of response
+  transcriptText    String?   // Transcript of the response
+  aiAnalysisScore   Float?    // AI-generated score (0-100)
+  aiAnalysisDetails Json?     // Detailed AI analysis as JSON
+  recruiterNotes    String?   // Notes from the recruiter
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relationships
+  interviewId       String
+  interview         Interview @relation(fields: [interviewId], references: [id])
+  interviewQuestionId String   @unique
+  interviewQuestion InterviewQuestion @relation(fields: [interviewQuestionId], references: [id])
+  
+  @@map("responses")
+}
+
+// Note model for shared note-taking
+model Note {
+  id                String    @id @default(uuid())
+  title             String
+  content           String    // Rich text content in HTML format
+  isShared          Boolean   @default(true) // Whether the note is shared with others
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relationships
+  createdById       String
+  createdBy         User      @relation(fields: [createdById], references: [id])
+  interviewId       String
+  interview         Interview @relation(fields: [interviewId], references: [id])
+  edits             NoteEdit[] // History of edits to this note
+  
+  @@map("notes")
+}
+
+// NoteEdit model for tracking note edit history
+model NoteEdit {
+  id                String    @id @default(uuid())
+  content           String    // The content at this point in time
+  createdAt         DateTime  @default(now())
+  
+  // Relationships
+  noteId            String
+  note              Note      @relation(fields: [noteId], references: [id])
+  userId            String
+  user              User      @relation(fields: [userId], references: [id])
+  
+  @@map("note_edits")
+}

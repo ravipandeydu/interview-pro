@@ -8,7 +8,7 @@ export class ChatService {
    */
   static async chatWithDatabase(question: string): Promise<ChatResponse> {
     try {
-      const { data } = await api.post<ChatResponse>("/api/ai/chat", {
+      const { data } = await api.post<ChatResponse>("ai/chat", {
         question,
       });
       return data;
@@ -27,7 +27,7 @@ export class ChatService {
   ): Promise<void> {
     try {
       const response = await api.post(
-        "/api/chat/stream",
+        "chat/stream",
         { question },
         {
           responseType: "stream",
@@ -87,7 +87,7 @@ export class ChatService {
     };
   }> {
     try {
-      const { data } = await api.get("/api/chat/history", {
+      const { data } = await api.get("chat/history", {
         params: { page, limit },
       });
       return data;
@@ -105,7 +105,7 @@ export class ChatService {
   ): Promise<{ message: string }> {
     try {
       const { data } = await api.delete<{ message: string }>(
-        `/api/chat/${messageId}`
+        `chat/${messageId}`
       );
       return data;
     } catch (error) {
@@ -120,7 +120,7 @@ export class ChatService {
   static async clearChatHistory(): Promise<{ message: string }> {
     try {
       const { data } = await api.delete<{ message: string }>(
-        "/api/chat/history"
+        "chat/history"
       );
       return data;
     } catch (error) {
@@ -136,7 +136,7 @@ export class ChatService {
     type: "daily" | "weekly" | "monthly" = "daily"
   ): Promise<Summary> {
     try {
-      const { data } = await api.get<Summary>("/api/summary", {
+      const { data } = await api.get<Summary>("summary", {
         params: { type },
       });
       return data;
@@ -156,7 +156,7 @@ export class ChatService {
     format?: "brief" | "detailed" | "bullet-points";
   }): Promise<Summary> {
     try {
-      const { data } = await api.post<Summary>("/api/summary/custom", params);
+      const { data } = await api.post<Summary>("summary/custom", params);
       return data;
     } catch (error) {
       console.error("Generate custom summary error:", error);
@@ -180,7 +180,7 @@ export class ChatService {
     };
   }> {
     try {
-      const { data } = await api.get("/api/summary/all", {
+      const { data } = await api.get("summary/all", {
         params: { page, limit },
       });
       return data;
@@ -196,7 +196,7 @@ export class ChatService {
   static async deleteSummary(summaryId: string): Promise<{ message: string }> {
     try {
       const { data } = await api.delete<{ message: string }>(
-        `/api/summary/${summaryId}`
+        `summary/${summaryId}`
       );
       return data;
     } catch (error) {
@@ -212,7 +212,7 @@ export class ChatService {
     format: "json" | "csv" | "pdf" = "json"
   ): Promise<Blob> {
     try {
-      const { data } = await api.get("/api/chat/export", {
+      const { data } = await api.get("chat/export", {
         params: { format },
         responseType: "blob",
       });
@@ -240,7 +240,7 @@ export class ChatService {
     };
   }> {
     try {
-      const { data } = await api.get("/api/chat/analytics", {
+      const { data } = await api.get("chat/analytics", {
         params: { period },
       });
       return data;
@@ -260,7 +260,7 @@ export class ChatService {
   ): Promise<{ message: string }> {
     try {
       const { data } = await api.post<{ message: string }>(
-        `/api/chat/${messageId}/rate`,
+        `chat/${messageId}/rate`,
         {
           rating,
           feedback,

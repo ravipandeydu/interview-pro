@@ -13,6 +13,8 @@ import app from './app.js';
 import config from './config/index.js';
 import logger from './utils/logger.js';
 import prisma from './config/database.js';
+import socketService from './services/socket.service.js';
+import yjsWebSocketService from './services/y-websocket.service.js';
 
 // Uncaught exception handler
 process.on('uncaughtException', (err) => {
@@ -24,6 +26,12 @@ process.on('uncaughtException', (err) => {
 
 // Create HTTP server
 const server = createServer(app);
+
+// Initialize Socket.IO
+socketService.initializeSocketIO(server);
+
+// Initialize Y.js WebSocket server
+yjsWebSocketService(server);
 
 // Connect to database - Prisma automatically connects when imported
 try {
@@ -38,6 +46,7 @@ const PORT = config.port || 4000;
 server.listen(PORT, () => {
   logger.info(`Server running in ${config.nodeEnv} mode on port ${PORT}`);
   logger.info(`API Documentation available at http://localhost:${PORT}/api/docs`);
+  logger.info(`Socket.IO server initialized and running`);
 });
 
 // Handle unhandled promise rejections

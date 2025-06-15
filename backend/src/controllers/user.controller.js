@@ -309,6 +309,55 @@ export const deleteAvatar = async (req, res, next) => {
   }
 };
 
+/**
+ * @swagger
+ * /api/users/search:
+ *   get:
+ *     summary: Search users by name or email
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *         description: Search query (name or email)
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Items per page
+ *     responses:
+ *       200:
+ *         description: List of users matching the search criteria
+ */
+export const searchUsers = async (req, res, next) => {
+  try {
+    const { q = '', page = 1, limit = 20 } = req.query;
+    const result = await userService.searchUsers(q, page, limit);
+    
+    sendPaginated(
+      res,
+      200,
+      'Users retrieved successfully',
+      result.users,
+      result.pagination.page,
+      result.pagination.limit,
+      result.pagination.total
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
 const userController = {
   getAllUsers,
   getUserById,
@@ -318,6 +367,7 @@ const userController = {
   updateProfile,
   uploadAvatar,
   deleteAvatar,
+  searchUsers,
 };
 
 export default userController;

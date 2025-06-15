@@ -255,8 +255,245 @@ export async function generateDataSummary(modelName, timeframe = 'month') {
   }
 }
 
+/**
+ * Generate interview questions based on job title, skills, and categories
+ * @param {Object} options - Options for generating questions
+ * @param {string} options.jobTitle - Job title
+ * @param {Array<string>} options.skills - List of skills
+ * @param {Array<string>} options.categories - List of question categories
+ * @param {number} options.count - Number of questions to generate
+ * @returns {Promise<Array<Object>>} Array of generated questions
+ */
+export async function generateInterviewQuestions({ jobTitle, skills, categories, count = 5 }) {
+  ensureApiKey();
+  try {
+    // Validate input
+    if (!jobTitle) {
+      throw new ApiError('Job title is required', 400);
+    }
+
+    if (!skills || !Array.isArray(skills) || skills.length === 0) {
+      throw new ApiError('At least one skill is required', 400);
+    }
+
+    // Prepare prompt for OpenAI
+    const prompt = `Generate ${count} unique interview questions for a ${jobTitle} position.
+
+Skills: ${skills.join(', ')}
+${categories && categories.length > 0 ? `Categories: ${categories.join(', ')}\n` : ''}
+
+For each question, provide:
+1. The question content
+2. The category (${categories && categories.length > 0 ? categories.join(', ') : 'TECHNICAL, BEHAVIORAL, SITUATIONAL'})
+3. Difficulty level (EASY, MEDIUM, HARD)
+4. Expected answer
+5. Relevant tags
+
+Format the response as a valid JSON array of objects with the following structure:
+[
+  {
+    "content": "question text",
+    "category": "CATEGORY",
+    "difficulty": "DIFFICULTY",
+    "expectedAnswer": "expected answer text",
+    "tags": ["tag1", "tag2"]
+  }
+]
+`;
+
+    // Call OpenAI API
+    const completion = await openai.chat.completions.create({
+      model: config.ai.model,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+    });
+
+    // Parse the response
+    const responseText = completion.choices[0].message.content.trim();
+    let questions;
+    
+    try {
+      // Find the JSON part in the response
+      const jsonMatch = responseText.match(/\[\s*\{.*\}\s*\]/s);
+      if (jsonMatch) {
+        questions = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('Could not extract JSON from response');
+      }
+    } catch (parseError) {
+      logger.error('Error parsing OpenAI response:', parseError);
+      logger.debug('Response text:', responseText);
+      throw new ApiError('Failed to parse AI-generated questions', 500);
+    }
+
+    // Validate and format questions
+    const formattedQuestions = questions.map(q => ({
+      content: q.content,
+      category: q.category,
+      difficulty: q.difficulty,
+      expectedAnswer: q.expectedAnswer,
+      tags: Array.isArray(q.tags) ? q.tags : [],
+      isActive: true
+    }));
+
+    return formattedQuestions;
+  } catch (error) {
+    logger.error('Error generating interview questions:', error);
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw new ApiError('Failed to generate interview questions', 500);
+  }
+}
+
+/**
+ * Analyze a candidate's response to an interview question
+ * @param {Object} options - Options for analyzing the response
+ * @param {Object} options.question - The question object
+ * @param {string} options.responseContent - The candidate's response content
+ * @returns {Promise<Object>} Analysis results with score and details
+ */
+export async function analyzeResponse({ question, responseContent }) {
+  ensureApiKey();
+  console.log('analyzeResponse', { question, responseContent });
+  try {
+    // Validate input
+    if (!question || !question.content) {
+      throw new ApiError('Question is required', 400);
+    }
+
+    if (!responseContent) {
+      throw new ApiError('Response content is required', 400);
+    }
+
+    // Check if this is a coding question
+    const isCodingQuestion = question.category === 'TECHNICAL' || question.category === 'PROBLEM_SOLVING';
+    
+    // Use different prompts based on question type
+    let prompt;
+    
+    if (isCodingQuestion) {
+      // For coding questions, use code quality analysis
+      prompt = `You are an expert software engineer evaluating a candidate's code submission for the following interview question:
+
+Question: ${question.content}
+Category: ${question.category}
+Difficulty: ${question.difficulty}
+Expected Answer: ${question.expectedAnswer || 'Not provided'}
+
+Candidate's Code Submission:
+\`\`\`
+${responseContent}
+\`\`\`
+
+Please perform a comprehensive code quality analysis and provide:
+1. A score from 0 to 100 based on overall code quality and correctness
+2. Detailed feedback on the code's strengths and weaknesses
+3. Specific suggestions for improvement
+4. Code quality metrics analysis covering:
+   - Static code analysis (syntax, structure, organization)
+   - Best practices adherence
+   - Performance optimization opportunities
+   - Potential security vulnerabilities
+   - Code style and readability
+
+Format your response as a valid JSON object with the following structure:
+{
+  "score": number,
+  "analysis": "detailed analysis text",
+  "strengths": ["strength1", "strength2", ...],
+  "weaknesses": ["weakness1", "weakness2", ...],
+  "suggestions": ["suggestion1", "suggestion2", ...],
+  "codeQualityMetrics": {
+    "maintainability": number (0-100),
+    "reliability": number (0-100),
+    "security": number (0-100),
+    "performance": number (0-100)
+  },
+  "codeQualityDetails": {
+    "staticAnalysis": ["finding1", "finding2", ...],
+    "bestPractices": ["practice1", "practice2", ...],
+    "performanceIssues": ["issue1", "issue2", ...],
+    "securityVulnerabilities": ["vulnerability1", "vulnerability2", ...]
+  }
+}
+`;
+    } else {
+      // For non-coding questions, use the original prompt
+      prompt = `You are an expert interviewer evaluating a candidate's response to the following interview question:
+
+Question: ${question.content}
+Category: ${question.category}
+Difficulty: ${question.difficulty}
+Expected Answer: ${question.expectedAnswer || 'Not provided'}
+
+Candidate's Response: ${responseContent}
+
+Please analyze the response and provide:
+1. A score from 0 to 100 based on how well the response addresses the question
+2. Detailed feedback on the strengths and weaknesses of the response
+3. Suggestions for improvement
+
+Format your response as a valid JSON object with the following structure:
+{
+  "score": number,
+  "analysis": "detailed analysis text",
+  "strengths": ["strength1", "strength2", ...],
+  "weaknesses": ["weakness1", "weakness2", ...],
+  "suggestions": ["suggestion1", "suggestion2", ...]
+}
+`;
+    }
+
+    // Call OpenAI API
+    const completion = await openai.chat.completions.create({
+      model: config.ai.model,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.5,
+    });
+
+    // Parse the response
+    const responseText = completion.choices[0].message.content.trim();
+    let analysis;
+    
+    try {
+      // Find the JSON part in the response
+      const jsonMatch = responseText.match(/\{.*\}/s);
+      if (jsonMatch) {
+        analysis = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('Could not extract JSON from response');
+      }
+    } catch (parseError) {
+      logger.error('Error parsing OpenAI response:', parseError);
+      logger.debug('Response text:', responseText);
+      throw new ApiError('Failed to parse AI analysis', 500);
+    }
+
+    console.log("analysis", responseText, analysis)
+
+    return {
+      score: analysis.score,
+      details: {
+        analysis: analysis.analysis,
+        strengths: analysis.strengths || [],
+        weaknesses: analysis.weaknesses || [],
+        suggestions: analysis.suggestions || []
+      }
+    };
+  } catch (error) {
+    logger.error('Error analyzing response:', error);
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw new ApiError('Failed to analyze response', 500);
+  }
+}
+
 // Export consolidated service
 export default {
   chatWithDatabase,
   generateDataSummary,
+  generateInterviewQuestions,
+  analyzeResponse
 };

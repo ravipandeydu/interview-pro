@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interview Invitation</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      text-align: center;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #eee;
+    }
+    .header h1 {
+      color: #2c3e50;
+      margin-bottom: 10px;
+    }
+    .content {
+      padding: 20px 0;
+    }
+    .button {
+      display: inline-block;
+      background-color: #3498db;
+      color: white;
+      text-decoration: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      margin: 20px 0;
+      font-weight: bold;
+    }
+    .button:hover {
+      background-color: #2980b9;
+    }
+    .footer {
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+      text-align: center;
+      font-size: 0.8em;
+      color: #7f8c8d;
+    }
+    .details {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 4px;
+      margin: 20px 0;
+    }
+    .details p {
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Interview Invitation</h1>
+  </div>
+  
+  <div class="content">
+    <p>Hello {{candidateName}},</p>
+    
+    <p>We're pleased to invite you to complete an online interview for the position at our company.</p>
+    
+    <div class="details">
+      <p><strong>Position:</strong> {{position}}</p>
+      <p><strong>Interview Type:</strong> {{interviewType}}</p>
+      <p><strong>Duration:</strong> {{duration}} minutes</p>
+      <p><strong>Access Link Valid Until:</strong> {{expiryDate}}</p>
+    </div>
+    
+    <p>This interview consists of {{questionCount}} questions designed to assess your skills and experience. You can complete it at any time before the access link expires.</p>
+    
+    <p>To begin your interview, please click the button below:</p>
+    
+    <div style="text-align: center;">
+      <a href="{{accessLink}}" class="button">Start Interview</a>
+    </div>
+    
+    <p><strong>Important Notes:</strong></p>
+    <ul>
+      <li>Once started, try to complete the interview in one session</li>
+      <li>Ensure you have a stable internet connection</li>
+      <li>This link is unique to you and should not be shared</li>
+      <li>The link will expire on {{expiryDate}}</li>
+    </ul>
+    
+    <p>If you have any questions or technical issues, please contact our support team at <a href="mailto:support@example.com">support@example.com</a>.</p>
+    
+    <p>We look forward to reviewing your responses!</p>
+    
+    <p>Best regards,<br>
+    {{companyName}} Recruitment Team</p>
+  </div>
+  
+  <div class="footer">
+    <p>This is an automated message, please do not reply directly to this email.</p>
+    <p>&copy; {{currentYear}} {{companyName}}. All rights reserved.</p>
+  </div>
+</body>
+</html>

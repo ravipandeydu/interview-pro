@@ -15,7 +15,7 @@ export class AuthService {
   static async login(credentials: LoginFormData): Promise<SessionResponse> {
     try {
       const { data } = await api.post<SessionResponse>(
-        "/api/auth/login",
+        "auth/login",
         credentials
       );
       // Store the token in localStorage
@@ -39,7 +39,7 @@ export class AuthService {
       const { data } = await api.post<{
         user: Session["user"];
         message: string;
-      }>("api/auth/register", userData);
+      }>("auth/register", userData);
       // No longer store token on registration since email verification is required
       return data;
     } catch (error) {
@@ -53,7 +53,7 @@ export class AuthService {
    */
   static async getSession(): Promise<Session | null> {
     try {
-      const { data } = await api.get<Session>("/api/auth/session");
+      const { data } = await api.get<Session>("auth/session");
       return data;
     } catch (error) {
       // Session might not exist or be expired
@@ -67,7 +67,7 @@ export class AuthService {
    */
   static async logout(): Promise<void> {
     try {
-      await api.post("/auth/logout");
+      await api.post("auth/logout");
     } catch (error) {
       console.error("Logout error:", error);
       throw error;
@@ -85,7 +85,7 @@ export class AuthService {
   ): Promise<{ message: string }> {
     try {
       const { data } = await api.post<{ message: string }>(
-        "/auth/reset-password",
+        "auth/reset-password",
         { email }
       );
       return data;
@@ -101,7 +101,7 @@ export class AuthService {
   static async forgotPassword(email: string): Promise<{ message: string }> {
     try {
       const { data } = await api.post<{ message: string }>(
-        "/api/auth/forgot-password",
+        "auth/forgot-password",
         { email }
       );
       return data;
@@ -120,7 +120,7 @@ export class AuthService {
   ): Promise<{ message: string }> {
     try {
       const { data } = await api.post<{ message: string }>(
-        `/api/auth/reset-password/${token}`,
+        `auth/reset-password/${token}`,
         {
           token,
           password: newPassword,
@@ -142,7 +142,7 @@ export class AuthService {
   ): Promise<{ message: string }> {
     try {
       const { data } = await api.post<{ message: string }>(
-        "/auth/change-password",
+        "auth/change-password",
         {
           currentPassword,
           newPassword,
@@ -160,7 +160,7 @@ export class AuthService {
    */
   static async refreshToken(): Promise<Session> {
     try {
-      const { data } = await api.post<Session>("/auth/refresh");
+      const { data } = await api.post<Session>("auth/refresh");
       return data;
     } catch (error) {
       console.error("Token refresh error:", error);
@@ -178,7 +178,7 @@ export class AuthService {
   static async verifyEmail(token: string): Promise<VerificationResponse> {
     try {
       const { data } = await api.get<VerificationResponse>(
-        `/api/auth/verify-email/${token}`
+        `auth/verify-email/${token}`
       );
       return data;
     } catch (error) {
@@ -193,7 +193,7 @@ export class AuthService {
   static async resendVerification(email: string): Promise<{ message: string }> {
     try {
       const { data } = await api.post<{ message: string }>(
-        "/api/auth/resend-verification",
+        "auth/resend-verification",
         { email }
       );
       return data;

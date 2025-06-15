@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { api } from '@/lib/api';
+import React from 'react';
 
 export default function VerifyEmailPage() {
   const params = useParams();
@@ -17,7 +18,9 @@ export default function VerifyEmailPage() {
   useEffect(() => {
     const verifyEmail = async () => {
       try {
-        const token = params.token as string;
+        // Use React.use() to unwrap the params Promise
+        const tokenParam = React.use(params);
+        const token = tokenParam.token as string;
         const response = await api.get(`/api/auth/verify-email/${token}`);
         setStatus('success');
         setMessage(response.data.message || 'Email verified successfully!');
@@ -31,7 +34,7 @@ export default function VerifyEmailPage() {
     };
 
     verifyEmail();
-  }, [params.token]);
+  }, [params]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
