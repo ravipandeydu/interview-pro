@@ -74,10 +74,16 @@ export function CollaborativeNoteEditor({
   // 2) Create WebsocketProvider once (only when user & noteId known)
   const wsProvider = useMemo(() => {
     if (!user || !noteId) return null;
-    const url = `ws://${window.location.hostname}:${window.location.port || 3000}`;
+    // Connect directly to the backend WebSocket server
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    const backendHost = new URL(backendUrl).hostname;
+    const backendPort = new URL(backendUrl).port || '8080';
+    // Add token as a query parameter as expected by the backend
+    const token = tokenManager.getToken();
+    const url = `ws://${backendHost}:${backendPort}/yjs?token=${encodeURIComponent(token)}`;
     return new WebsocketProvider(url, `note-${noteId}`, ydoc, {
-      connect: true,
-      params: { token: tokenManager.getToken() },
+      connect: true
+      // Token is now sent as a query parameter in the URL
     });
   }, [noteId, user, ydoc]);
 
