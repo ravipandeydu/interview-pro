@@ -32,7 +32,7 @@ export default function RootLayout({
             <main className="flex-1">{children}</main>
             <Footer />
           </div>
-          <ChatWidget position="bottom-right" />
+          {/* <ChatWidget position="bottom-right" /> */}
         </Providers>
       </body>
     </html>

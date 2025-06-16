@@ -43,8 +43,16 @@ export function VideoChat({ interviewId, userRole = 'CANDIDATE' }: VideoChatProp
   const getUserMedia = useCallback(async () => {
     try {
       console.log(`[WebRTC] Getting user media, video: ${!isVideoOff}, audio: ${!isMicMuted}`);
+      
+      // Explicitly set video constraints to ensure proper video capture
+      const videoConstraints = !isVideoOff ? {
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        facingMode: "user"
+      } : false;
+      
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: !isVideoOff,
+        video: videoConstraints,
         audio: !isMicMuted
       });
       
@@ -52,11 +60,31 @@ export function VideoChat({ interviewId, userRole = 'CANDIDATE' }: VideoChatProp
         `video tracks: ${stream.getVideoTracks().length}`, 
         `audio tracks: ${stream.getAudioTracks().length}`);
       
+      // Log detailed information about video tracks
+      if (stream.getVideoTracks().length > 0) {
+        const videoTrack = stream.getVideoTracks()[0];
+        console.log(`[WebRTC] Video track details:`, {
+          enabled: videoTrack.enabled,
+          readyState: videoTrack.readyState,
+          muted: videoTrack.muted,
+          id: videoTrack.id,
+          label: videoTrack.label,
+          settings: videoTrack.getSettings()
+        });
+      }
+      
       setLocalStream(stream);
       
       if (localVideoRef.current) {
+        console.log(`[WebRTC] Setting local video source`);
         localVideoRef.current.srcObject = stream;
-        console.log(`[WebRTC] Set local video source`);
+        
+        // Force play to ensure video starts
+        localVideoRef.current.play().catch(err => {
+          console.error(`[WebRTC] Error playing local video: ${err.message}`);
+        });
+      } else {
+        console.warn(`[WebRTC] Local video ref is not available`);
       }
       
       return stream;
@@ -138,7 +166,13 @@ export function VideoChat({ interviewId, userRole = 'CANDIDATE' }: VideoChatProp
     const peer = new Peer({
       initiator: true,
       trickle: false,
-      stream
+      stream,
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:global.stun.twilio.com:3478' }
+        ]
+      }
     });
     
     peer.on('signal', (signal) => {
@@ -157,6 +191,30 @@ export function VideoChat({ interviewId, userRole = 'CANDIDATE' }: VideoChatProp
       console.error(`[WebRTC] Peer connection error with ${userToSignal}:`, err);
     });
     
+    // Set up stream handler immediately
+    peer.on('stream', (remoteStream) => {
+      console.log(`[WebRTC] Received stream from ${userToSignal}`, remoteStream.id);
+      // Log stream details to help debug
+      console.log(`[WebRTC] Stream has ${remoteStream.getVideoTracks().length} video tracks and ${remoteStream.getAudioTracks().length} audio tracks`);
+      
+      // Ensure video tracks are enabled
+      remoteStream.getVideoTracks().forEach(track => {
+        console.log(`[WebRTC] Video track: enabled=${track.enabled}, readyState=${track.readyState}`);
+        track.enabled = true;
+      });
+      
+      setPeers(prevPeers => {
+        const updatedPeers = prevPeers.map(p => {
+          if (p.peerId === userToSignal) {
+            return { ...p, stream: remoteStream };
+          }
+          return p;
+        });
+        console.log(`[WebRTC] Updated peers after receiving stream:`, updatedPeers);
+        return updatedPeers;
+      });
+    });
+    
     return { peerId: userToSignal, peer };
   };
   
@@ -166,7 +224,13 @@ export function VideoChat({ interviewId, userRole = 'CANDIDATE' }: VideoChatProp
     const peer = new Peer({
       initiator: false,
       trickle: false,
-      stream
+      stream,
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:global.stun.twilio.com:3478' }
+        ]
+      }
     });
     
     peer.on('signal', (signal) => {
@@ -183,6 +247,30 @@ export function VideoChat({ interviewId, userRole = 'CANDIDATE' }: VideoChatProp
     
     peer.on('error', (err) => {
       console.error(`[WebRTC] Peer connection error with ${callerId}:`, err);
+    });
+    
+    // Set up stream handler immediately
+    peer.on('stream', (remoteStream) => {
+      console.log(`[WebRTC] Received stream from ${callerId}`, remoteStream.id);
+      // Log stream details to help debug
+      console.log(`[WebRTC] Stream has ${remoteStream.getVideoTracks().length} video tracks and ${remoteStream.getAudioTracks().length} audio tracks`);
+      
+      // Ensure video tracks are enabled
+      remoteStream.getVideoTracks().forEach(track => {
+        console.log(`[WebRTC] Video track: enabled=${track.enabled}, readyState=${track.readyState}`);
+        track.enabled = true;
+      });
+      
+      setPeers(prevPeers => {
+        const updatedPeers = prevPeers.map(p => {
+          if (p.peerId === callerId) {
+            return { ...p, stream: remoteStream };
+          }
+          return p;
+        });
+        console.log(`[WebRTC] Updated peers after receiving stream:`, updatedPeers);
+        return updatedPeers;
+      });
     });
     
     console.log(`[WebRTC] Signaling to peer ${callerId} with incoming signal`);
@@ -226,6 +314,16 @@ export function VideoChat({ interviewId, userRole = 'CANDIDATE' }: VideoChatProp
           setIsConnecting(false);
           return;
         }
+        
+        // Verify stream has active tracks
+        const videoTracks = stream.getVideoTracks();
+        const audioTracks = stream.getAudioTracks();
+        console.log(`[WebRTC] Stream ready for connection:`, {
+          videoTracks: videoTracks.length,
+          audioTracks: audioTracks.length,
+          videoEnabled: videoTracks.length > 0 ? videoTracks[0].enabled : false,
+          audioEnabled: audioTracks.length > 0 ? audioTracks[0].enabled : false
+        });
         
         console.log(`[WebRTC] Joining room with ID: ${roomId}, user role: ${userRole}`);
         socket.emit('webrtc:joinRoom', roomId);
@@ -473,6 +571,18 @@ export function VideoChat({ interviewId, userRole = 'CANDIDATE' }: VideoChatProp
     });
   };
 
+  // Add a useEffect to update video elements when peers state changes
+  useEffect(() => {
+    console.log(`[WebRTC] Peers state updated, peers count: ${peers.length}`);
+    peers.forEach(peer => {
+      if (peer.stream) {
+        console.log(`[WebRTC] Peer ${peer.peerId} has stream ${peer.stream.id}`);
+      } else {
+        console.log(`[WebRTC] Peer ${peer.peerId} has no stream yet`);
+      }
+    });
+  }, [peers]);
+
   return (
     <div className="space-y-4">
       {/* Video container */}
@@ -484,19 +594,49 @@ export function VideoChat({ interviewId, userRole = 'CANDIDATE' }: VideoChatProp
               peers.map((peer, index) => (
                 <div key={peer.peerId} className="absolute inset-0">
                   <video
-                    ref={remoteVideoRef}
-                    autoPlay
-                    playsInline
-                    className="w-full h-full object-cover"
-                    onLoadedMetadata={() => {
-                      if (remoteVideoRef.current) {
-                        peer.peer.on('stream', stream => {
-                          if (remoteVideoRef.current) {
-                            remoteVideoRef.current.srcObject = stream;
+                    ref={(element) => {
+                      if (element) {
+                        // Always set the ref, even if stream is not yet available
+                        console.log(`[WebRTC] Setting up video element for peer ${peer.peerId}`);
+                        if (peer.stream) {
+                          console.log(`[WebRTC] Setting srcObject for peer ${peer.peerId}`);
+                          
+                          // Only set srcObject if it's different from the current one
+                          if (element.srcObject !== peer.stream) {
+                            element.srcObject = peer.stream;
+                            
+                            // Add event listeners for debugging
+                            element.onloadedmetadata = () => {
+                              console.log(`[WebRTC] Video metadata loaded for peer ${peer.peerId}`);
+                            };
+                            
+                            element.oncanplay = () => {
+                              console.log(`[WebRTC] Video can play for peer ${peer.peerId}`);
+                            };
+                            
+                            element.onplay = () => {
+                              console.log(`[WebRTC] Video playing for peer ${peer.peerId}`);
+                            };
+                            
+                            element.onerror = (e) => {
+                              console.error(`[WebRTC] Video error for peer ${peer.peerId}:`, e);
+                            };
+                            
+                            // Force play to ensure video starts
+                            element.play().catch(err => {
+                              console.error(`[WebRTC] Error playing video: ${err.message}`);
+                            });
                           }
-                        });
+                        } else {
+                          console.log(`[WebRTC] No stream available yet for peer ${peer.peerId}`);
+                        }
                       }
                     }}
+                    autoPlay
+                    playsInline
+                    muted={false}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    className="w-full h-full object-cover"
                   />
                 </div>
               ))
@@ -529,10 +669,40 @@ export function VideoChat({ interviewId, userRole = 'CANDIDATE' }: VideoChatProp
         <div className="absolute bottom-2 right-2 w-1/4 aspect-video bg-background rounded overflow-hidden border shadow-md">
           {isConnected && !isVideoOff ? (
             <video
-              ref={localVideoRef}
+              ref={(element) => {
+                if (element && localStream) {
+                  console.log(`[WebRTC] Setting up local video element`);
+                  if (element.srcObject !== localStream) {
+                    element.srcObject = localStream;
+                    
+                    // Add event listeners for debugging
+                    element.onloadedmetadata = () => {
+                      console.log(`[WebRTC] Local video metadata loaded`);
+                    };
+                    
+                    element.oncanplay = () => {
+                      console.log(`[WebRTC] Local video can play`);
+                    };
+                    
+                    element.onplay = () => {
+                      console.log(`[WebRTC] Local video playing`);
+                    };
+                    
+                    element.onerror = (e) => {
+                      console.error(`[WebRTC] Local video error:`, e);
+                    };
+                    
+                    // Force play to ensure video starts
+                    element.play().catch(err => {
+                      console.error(`[WebRTC] Error playing local video: ${err.message}`);
+                    });
+                  }
+                }
+              }}
               autoPlay
               muted
               playsInline
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               className="w-full h-full object-cover"
             />
           ) : (

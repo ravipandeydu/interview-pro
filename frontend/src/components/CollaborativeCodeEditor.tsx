@@ -73,7 +73,7 @@ export function CollaborativeCodeEditor({
     const fetchInitialData = async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get(`/api/interviews/${interviewId}/code`);
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/interviews/${interviewId}/code`);
         const data = response.data;
         
         if (data.code) setCode(data.code);
@@ -100,7 +100,7 @@ export function CollaborativeCodeEditor({
     
     const autoSave = async () => {
       try {
-        await axios.post(`/api/interviews/${interviewId}/code`, {
+        await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/interviews/${interviewId}/code`, {
           code,
           language
         });
@@ -132,7 +132,7 @@ export function CollaborativeCodeEditor({
     
     const fetchCodeUpdates = async () => {
       try {
-        const response = await axios.get(`/api/interviews/${interviewId}/code`);
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/interviews/${interviewId}/code`);
         const data = response.data;
         
         // Only update if the content has changed and we didn't just save it ourselves
@@ -194,7 +194,7 @@ export function CollaborativeCodeEditor({
   const handleSave = async () => {
     try {
       setIsSaving(true);
-      await axios.post(`/api/interviews/${interviewId}/code`, {
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/interviews/${interviewId}/code`, {
         code,
         language
       });
