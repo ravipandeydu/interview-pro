@@ -75,21 +75,33 @@ export async function detectPlagiarism(submissionId) {
       };
     }
 
-    // Get other submissions for the same interview to compare
+    // Get other submissions for the same question across all interviews
     const otherSubmissions = await prisma.response.findMany({
       where: {
-        interviewId: submission.interviewId,
         id: { not: submissionId },
         interviewQuestion: {
+          questionId: question.id, // Compare based on question ID instead of interview ID
           question: {
             category: { in: ['TECHNICAL', 'PROBLEM_SOLVING'] }
           }
         }
       },
       include: {
+        interview: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
         interviewQuestion: {
           include: {
             question: true,
+          },
+        },
+        candidate: {
+          select: {
+            id: true,
+            name: true,
           },
         },
       },
@@ -107,8 +119,8 @@ Candidate's Code Submission:
 ${codeContent}
 \`\`\`
 
-${otherSubmissions.length > 0 ? `Compare with other submissions for similar questions:
-${otherSubmissions.map((s, i) => `Submission ${i + 1} for question "${s.interviewQuestion.question.content}":
+${otherSubmissions.length > 0 ? `Compare with other submissions for the same question from different interviews:
+${otherSubmissions.map((s, i) => `Submission ${i + 1} from candidate "${s.candidate?.name || 'Unknown'}" in interview "${s.interview?.title || 'Unknown'}":
 \`\`\`
 ${s.content}
 \`\`\`
@@ -130,9 +142,12 @@ Format your response as a valid JSON object with the following structure:
   "score": number,
   "matches": [
     {
-      "source": "description of source (e.g., 'Submission 2', 'Stack Overflow', etc.)",
+      "source": "description of source (e.g., 'Candidate Name - Interview Title', 'Stack Overflow', etc.)",
       "similarity": number (0-100),
-      "matchedText": "the specific code segment that matches"
+      "matchedText": "the specific code segment that matches",
+      "sourceType": "internal" or "external",
+      "candidateId": "optional - only for internal sources",
+      "interviewId": "optional - only for internal sources"
     },
     ...
   ]
@@ -165,17 +180,41 @@ Format your response as a valid JSON object with the following structure:
     }
 
     // Update the submission with the plagiarism report
+    // Transform the matches to include additional information for internal sources
+    const enhancedMatches = plagiarismReport.matches.map(match => {
+      // For internal sources, add candidate and interview information
+      if (match.sourceType === 'internal' && match.candidateId && match.interviewId) {
+        // Find the corresponding submission from otherSubmissions
+        const sourceSubmission = otherSubmissions.find(s => 
+          s.candidateId === match.candidateId && s.interviewId === match.interviewId
+        );
+        
+        if (sourceSubmission) {
+          return {
+            ...match,
+            source: `${sourceSubmission.candidate?.name || 'Unknown'} - ${sourceSubmission.interview?.title || 'Unknown Interview'}`,
+          };
+        }
+      }
+      return match;
+    });
+
+    const enhancedReport = {
+      ...plagiarismReport,
+      matches: enhancedMatches
+    };
+
     const updatedSubmission = await prisma.response.update({
       where: { id: submissionId },
       data: {
         aiAnalysisDetails: {
           ...(submission.aiAnalysisDetails || {}),
-          plagiarismReport,
+          plagiarismReport: enhancedReport,
         },
       },
     });
 
-    return plagiarismReport;
+    return enhancedReport;
   } catch (error) {
     logger.error('Error detecting plagiarism:', error);
     if (error instanceof ApiError) {
