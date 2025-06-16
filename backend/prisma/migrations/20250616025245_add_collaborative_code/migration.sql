@@ -155,6 +155,18 @@ CREATE TABLE "note_edits" (
     CONSTRAINT "note_edits_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "collaborative_code" (
+    "id" TEXT NOT NULL,
+    "code" TEXT NOT NULL DEFAULT '',
+    "language" TEXT NOT NULL DEFAULT 'javascript',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "interviewId" TEXT NOT NULL,
+
+    CONSTRAINT "collaborative_code_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
@@ -169,6 +181,9 @@ CREATE UNIQUE INDEX "interview_questions_interviewId_questionId_key" ON "intervi
 
 -- CreateIndex
 CREATE UNIQUE INDEX "responses_interviewQuestionId_key" ON "responses"("interviewQuestionId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "collaborative_code_interviewId_key" ON "collaborative_code"("interviewId");
 
 -- AddForeignKey
 ALTER TABLE "candidate_profiles" ADD CONSTRAINT "candidate_profiles_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -206,3 +221,5 @@ ALTER TABLE "note_edits" ADD CONSTRAINT "note_edits_noteId_fkey" FOREIGN KEY ("n
 -- AddForeignKey
 ALTER TABLE "note_edits" ADD CONSTRAINT "note_edits_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
+-- AddForeignKey
+ALTER TABLE "collaborative_code" ADD CONSTRAINT "collaborative_code_interviewId_fkey" FOREIGN KEY ("interviewId") REFERENCES "interviews"("id") ON DELETE CASCADE ON UPDATE CASCADE;

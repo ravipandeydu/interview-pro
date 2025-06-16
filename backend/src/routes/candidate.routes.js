@@ -10,6 +10,7 @@
 import express from 'express';
 import validate from '../middlewares/validation.middleware.js';
 import { protect, restrictTo } from '../middlewares/auth.middleware.js';
+import { uploadSingle } from '../middlewares/upload.middleware.js';
 import { candidateSchemas } from '../utils/validator.js';
 import {
   getAllCandidates,
@@ -18,6 +19,7 @@ import {
   updateCandidate,
   deleteCandidate,
 } from '../controllers/candidate.controller.js';
+import { uploadResume } from '../controllers/candidate-resume.controller.js';
 
 const router = express.Router();
 
@@ -180,5 +182,45 @@ router.patch('/:id', validate(candidateSchemas.updateCandidate), updateCandidate
  *         description: Forbidden - requires recruiter or admin role
  */
 router.delete('/:id', deleteCandidate);
+
+/**
+ * @swagger
+ * /api/v1/candidates/{id}/resume:
+ *   post:
+ *     summary: Upload candidate resume
+ *     tags: [Candidates]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Candidate ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - resume
+ *             properties:
+ *               resume:
+ *                 type: string
+ *                 format: binary
+ *                 description: Resume file (PDF only, max 5MB)
+ *     responses:
+ *       200:
+ *         description: Resume uploaded successfully
+ *       400:
+ *         description: Invalid input or file type
+ *       404:
+ *         description: Candidate not found
+ *       403:
+ *         description: Forbidden - requires recruiter or admin role
+ */
+router.post('/:id/resume', uploadSingle('resume'), uploadResume);
 
 export default router;

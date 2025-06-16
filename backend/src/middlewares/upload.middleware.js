@@ -6,13 +6,25 @@ const storage = multer.memoryStorage();
 
 // File filter function
 const fileFilter = (req, file, cb) => {
-  // Check file type
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+  // Check file type based on the route
+  const isResume = req.originalUrl.includes('/candidates') && req.originalUrl.includes('/resume');
   
-  if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
+  if (isResume) {
+    // For resume uploads, only allow PDF
+    if (file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new ApiError('Invalid file type. Only PDF files are allowed for resumes.', 400), false);
+    }
   } else {
-    cb(new ApiError('Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.', 400), false);
+    // For other uploads (like avatars), allow images
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new ApiError('Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.', 400), false);
+    }
   }
 };
 

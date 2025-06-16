@@ -7,7 +7,9 @@ import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
+import { toast } from 'sonner';
+import axios from 'axios';
 import {
   Bold,
   Italic,
@@ -22,6 +24,7 @@ import {
   Quote,
   Undo,
   Redo,
+  Save,
 } from 'lucide-react';
 
 interface TipTapEditorProps {
@@ -29,6 +32,11 @@ interface TipTapEditorProps {
   onChange: (content: string) => void;
   placeholder?: string;
   editable?: boolean;
+  onSave?: (content: string) => Promise<void>;
+  autoSaveInterval?: number | null; // in milliseconds, null means no auto-save
+  noteId?: string; // Optional noteId for reference
+  fetchUpdates?: boolean; // Whether to fetch updates periodically
+  fetchInterval?: number; // Interval for fetching updates in milliseconds
 }
 
 export function TipTapEditor({
@@ -36,7 +44,17 @@ export function TipTapEditor({
   onChange,
   placeholder = 'Write your answer here...',
   editable = true,
+  onSave,
+  autoSaveInterval = null, // Default to no auto-save
+  noteId,
+  fetchUpdates = false, // Default to not fetching updates
+  fetchInterval = 5000, // Default to 5 seconds
 }: TipTapEditorProps) {
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const fetchTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -54,7 +72,19 @@ export function TipTapEditor({
     content,
     editable,
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
+      const html = editor.getHTML();
+      onChange(html);
+      
+      // Setup auto-save only if interval is provided and greater than 0
+      if (autoSaveInterval && autoSaveInterval > 0 && onSave) {
+        if (autoSaveTimerRef.current) {
+          clearTimeout(autoSaveTimerRef.current);
+        }
+        
+        autoSaveTimerRef.current = setTimeout(() => {
+          saveContent(html);
+        }, autoSaveInterval);
+      }
     },
     autofocus: true,
   });
@@ -65,6 +95,43 @@ export function TipTapEditor({
       editor.commands.setContent(content);
     }
   }, [content, editor]);
+  
+  // Setup periodic content fetching if enabled
+  useEffect(() => {
+    if (!fetchUpdates || !noteId || !editor) return;
+    
+    // Function to fetch the latest content
+    const fetchLatestContent = async () => {
+      try {
+        const response = await axios.get(`/api/notes/${noteId}`);
+        const latestNote = response.data;
+        
+        // Only update if the content is different from current editor content
+        if (latestNote.content && latestNote.content !== editor.getHTML()) {
+          editor.commands.setContent(latestNote.content);
+          toast.info('Content updated from server');
+        }
+        
+        // Update last saved timestamp if available
+        if (latestNote.updatedAt) {
+          setLastSaved(new Date(latestNote.updatedAt));
+        }
+      } catch (error) {
+        console.error('Failed to fetch latest content:', error);
+        // Don't show error toast to avoid annoying the user with repeated errors
+      }
+    };
+    
+    // Set up interval to fetch content
+    fetchTimerRef.current = setInterval(fetchLatestContent, fetchInterval);
+    
+    return () => {
+      // Clean up interval on unmount
+      if (fetchTimerRef.current) {
+        clearInterval(fetchTimerRef.current);
+      }
+    };
+  }, [fetchUpdates, noteId, fetchInterval, editor]);
 
   // Focus the editor when it's initialized
   useEffect(() => {
@@ -75,12 +142,47 @@ export function TipTapEditor({
     }
   }, [editor]);
 
+  // Clean up auto-save timer on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, []);
+
   // Handle click on editor container to focus
   const handleContainerClick = useCallback(() => {
     if (editor && editable) {
       editor.commands.focus();
     }
   }, [editor, editable]);
+
+  // Save content
+  const saveContent = async (contentToSave: string) => {
+    if (isSaving || !onSave) return;
+    
+    setIsSaving(true);
+    try {
+      await onSave(contentToSave);
+      setLastSaved(new Date());
+      
+      // No toast to avoid too many notifications during auto-save
+    } catch (error) {
+      console.error('Failed to save content:', error);
+      toast.error('Failed to save content');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle manual save
+  const handleSaveClick = () => {
+    if (editor && onSave) {
+      saveContent(editor.getHTML());
+      toast.success('Content saved successfully');
+    }
+  };
 
   if (!editor) {
     return null;
@@ -211,6 +313,18 @@ export function TipTapEditor({
           <LinkIcon className="h-4 w-4" />
         </Button>
         <div className="ml-auto flex gap-1">
+          {onSave && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSaveClick}
+              disabled={isSaving}
+              className="h-8 px-2"
+            >
+              <Save className="h-4 w-4 mr-1" />
+              {isSaving ? 'Saving...' : 'Save'}
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
@@ -231,10 +345,17 @@ export function TipTapEditor({
           </Button>
         </div>
       </div>
-      <EditorContent
-        editor={editor}
-        className="prose dark:prose-invert max-w-none p-4 min-h-[200px] focus:outline-none"
-      />
+      <div className="relative">
+        <EditorContent
+          editor={editor}
+          className="prose dark:prose-invert max-w-none p-4 min-h-[200px] focus:outline-none"
+        />
+        {lastSaved && (
+          <div className="absolute bottom-1 right-2 text-xs text-muted-foreground">
+            Last saved: {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

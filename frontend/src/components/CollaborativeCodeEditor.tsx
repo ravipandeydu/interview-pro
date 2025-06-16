@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Editor, EditorProps, OnMount } from '@monaco-editor/react';
 import { editor as monacoEditor } from 'monaco-editor';
-import { useCollaborativeCode } from '@/hooks/useCollaborativeCode';
 import { useUserPreferences } from '@/hooks/useUser';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Users, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import axios from 'axios';
 
 interface CollaborativeCodeEditorProps {
   interviewId: string;
@@ -22,6 +22,8 @@ interface CollaborativeCodeEditorProps {
   onCodeChange?: (code: string) => void;
   onLanguageChange?: (language: string) => void;
   isCandidate?: boolean;
+  fetchUpdates?: boolean;
+  fetchInterval?: number; // in milliseconds
 }
 
 const LANGUAGE_OPTIONS = [
@@ -43,6 +45,8 @@ export function CollaborativeCodeEditor({
   onCodeChange,
   onLanguageChange,
   isCandidate = false,
+  fetchUpdates = false,
+  fetchInterval = 5000, // Default to 5 seconds
 }: CollaborativeCodeEditorProps) {
   // Only use preferences hook if not in candidate mode
   const { data: preferences } = !isCandidate ? useUserPreferences() : { data: undefined };
@@ -51,86 +55,157 @@ export function CollaborativeCodeEditor({
   const editorRef = useRef<monacoEditor.IStandaloneCodeEditor | null>(null);
   const [showActiveEditors, setShowActiveEditors] = useState(false);
   
-  // Use collaborative code hook
-  const {
-    code,
-    language,
-    updateCode,
-    updateLanguage,
-    saveCode,
-    isSaving,
-    isLoading,
-    activeEditors,
-    lastSaved,
-    error,
-    updateCursorPosition,
-    ytext,
-  } = useCollaborativeCode({
-    interviewId,
-    initialCode,
-    initialLanguage,
-    onCodeChange,
-    onLanguageChange,
-  });
+  // State management for code editor
+  const [code, setCode] = useState(initialCode);
+  const [language, setLanguage] = useState(initialLanguage);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeEditors, setActiveEditors] = useState<Array<{id: string; name: string; role?: string}>>([]);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Refs for timers
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const fetchTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Initial data loading
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await axios.get(`/api/interviews/${interviewId}/code`);
+        const data = response.data;
+        
+        if (data.code) setCode(data.code);
+        if (data.language) setLanguage(data.language);
+        if (data.updatedAt) setLastSaved(new Date(data.updatedAt));
+        if (data.activeUsers) setActiveEditors(data.activeUsers);
+        
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Failed to fetch initial code data:', error);
+        setError('Failed to load code data');
+        setIsLoading(false);
+      }
+    };
+    
+    fetchInitialData();
+  }, [interviewId]);
+  
+  // Auto-save feature
+  useEffect(() => {
+    if (readOnly) return;
+    
+    const autoSaveInterval = 30000; // 30 seconds
+    
+    const autoSave = async () => {
+      try {
+        await axios.post(`/api/interviews/${interviewId}/code`, {
+          code,
+          language
+        });
+        setLastSaved(new Date());
+      } catch (error) {
+        console.error('Auto-save failed:', error);
+      }
+    };
+    
+    autoSaveTimerRef.current = setInterval(autoSave, autoSaveInterval);
+    
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearInterval(autoSaveTimerRef.current);
+      }
+    };
+  }, [interviewId, code, language, readOnly]);
   
   // Set editor theme based on user preferences or default
   useEffect(() => {
-    if (preferences?.display?.codeEditorTheme) {
-      setTheme(preferences.display.codeEditorTheme);
+    if (preferences?.editorTheme) {
+      setTheme(preferences.editorTheme);
     }
   }, [preferences]);
+  
+  // Periodic fetching of code updates
+  useEffect(() => {
+    if (!fetchUpdates || !interviewId) return;
+    
+    const fetchCodeUpdates = async () => {
+      try {
+        const response = await axios.get(`/api/interviews/${interviewId}/code`);
+        const data = response.data;
+        
+        // Only update if the content has changed and we didn't just save it ourselves
+        if (data.code && data.code !== code) {
+          setCode(data.code);
+          if (onCodeChange) onCodeChange(data.code);
+        }
+        
+        if (data.language && data.language !== language) {
+          setLanguage(data.language);
+          if (onLanguageChange) onLanguageChange(data.language);
+        }
+        
+        if (data.updatedAt) {
+          setLastSaved(new Date(data.updatedAt));
+        }
+        
+        if (data.activeUsers) {
+          setActiveEditors(data.activeUsers);
+        }
+      } catch (error) {
+        console.error('Failed to fetch code updates:', error);
+      }
+    };
+    
+    // Set up interval for fetching updates
+    fetchTimerRef.current = setInterval(fetchCodeUpdates, fetchInterval);
+    
+    // Initial fetch
+    fetchCodeUpdates();
+    
+    return () => {
+      if (fetchTimerRef.current) {
+        clearInterval(fetchTimerRef.current);
+      }
+    };
+  }, [interviewId, fetchUpdates, fetchInterval, code, language, onCodeChange, onLanguageChange]);
   
   // Handle editor mount
   const handleEditorDidMount: OnMount = (editor, monaco) => {
     editorRef.current = editor;
     setIsEditorReady(true);
-    
-    // Setup cursor position tracking
-    editor.onDidChangeCursorPosition((e) => {
-      updateCursorPosition(e.position);
-    });
-    
-    // Setup Y.js binding with Monaco editor
-    if (ytext) {
-      // Create a Monaco model that syncs with Y.js
-      const model = monaco.editor.createModel(
-        code || placeholder,
-        language,
-      );
-      
-      // Bind the Y.js text to the Monaco model
-      const binding = new monaco.editor.MonacoYTextBinding({
-        ytext,
-        model,
-        awareness: provider.current?.awareness,
-        undoManager: new Y.UndoManager(ytext),
-      });
-      
-      // Set the model to the editor
-      editor.setModel(model);
-      
-      return () => {
-        binding.destroy();
-        model.dispose();
-      };
-    }
   };
   
   // Handle editor change
   const handleEditorChange = (value: string | undefined) => {
     const newCode = value || '';
-    updateCode(newCode);
+    setCode(newCode);
+    if (onCodeChange) onCodeChange(newCode);
   };
   
   // Handle language change
   const handleLanguageChange = (value: string) => {
-    updateLanguage(value);
+    setLanguage(value);
+    if (onLanguageChange) onLanguageChange(value);
   };
   
   // Handle manual save
-  const handleSave = () => {
-    saveCode(code, language);
-    toast.success('Code saved successfully');
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      await axios.post(`/api/interviews/${interviewId}/code`, {
+        code,
+        language
+      });
+      setLastSaved(new Date());
+      toast.success('Code saved successfully');
+    } catch (error) {
+      console.error('Failed to save code:', error);
+      toast.error('Failed to save code');
+    } finally {
+      setIsSaving(false);
+    }
   };
   
   // Editor options

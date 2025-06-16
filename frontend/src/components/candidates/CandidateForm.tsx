@@ -1,20 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useCandidate } from '../../hooks/useCandidate';
-import { Button } from '../ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
-import { Input } from '../ui/input';
-import { Textarea } from '../ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { useCandidate } from '@/hooks/useCandidate';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Candidate } from '../../services/candidateService';
-import { PencilIcon, UserPlusIcon } from 'lucide-react';
+import { Candidate } from '@/types/candidate';
+import { PencilIcon, UserPlusIcon, FileIcon, UploadIcon, CheckCircleIcon } from 'lucide-react';
 
 // Define the form schema with Zod
 const candidateFormSchema = z.object({
@@ -22,6 +22,7 @@ const candidateFormSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
   phone: z.string().optional(),
   resumeUrl: z.string().url({ message: 'Please enter a valid URL' }).optional().or(z.literal('')),
+  resumeFile: z.instanceof(File).optional(),
   linkedInUrl: z.string().url({ message: 'Please enter a valid URL' }).optional().or(z.literal('')),
   githubUrl: z.string().url({ message: 'Please enter a valid URL' }).optional().or(z.literal('')),
   portfolioUrl: z.string().url({ message: 'Please enter a valid URL' }).optional().or(z.literal('')),
@@ -53,10 +54,14 @@ interface CandidateFormProps {
 
 export default function CandidateForm({ candidate, isEditing = false }: CandidateFormProps) {
   const router = useRouter();
-  const { createCandidate, updateCandidate } = useCandidate();
+  const { createCandidate, updateCandidate, uploadResume } = useCandidate();
   const createMutation = createCandidate();
   const updateMutation = updateCandidate(candidate?.id || '');
+  const uploadResumeMutation = uploadResume(candidate?.id || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Convert skills array to comma-separated string for the form
   const defaultValues: Partial<CandidateFormValues> = {
@@ -64,6 +69,7 @@ export default function CandidateForm({ candidate, isEditing = false }: Candidat
     email: candidate?.email || '',
     phone: candidate?.phone || '',
     resumeUrl: candidate?.resumeUrl || '',
+    resumeFile: undefined,
     linkedInUrl: candidate?.linkedInUrl || '',
     githubUrl: candidate?.githubUrl || '',
     portfolioUrl: candidate?.portfolioUrl || '',
@@ -75,6 +81,25 @@ export default function CandidateForm({ candidate, isEditing = false }: Candidat
     educationField: candidate?.educationField || '',
     notes: candidate?.notes || '',
     status: candidate?.status || 'NEW',
+  };
+  
+  // Handle file input change
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      // Check if file is PDF
+      if (file.type !== 'application/pdf') {
+        toast.error('Only PDF files are allowed');
+        return;
+      }
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size should not exceed 5MB');
+        return;
+      }
+      setResumeFile(file);
+      form.setValue('resumeFile', file);
+    }
   };
 
   const form = useForm<CandidateFormValues>({
@@ -91,13 +116,34 @@ export default function CandidateForm({ candidate, isEditing = false }: Candidat
         ...data,
         skills: data.skills ? data.skills.split(',').map(skill => skill.trim()).filter(Boolean) : [],
       };
+      
+      // Remove resumeFile from data before sending to API
+      delete formattedData.resumeFile;
+
+      let candidateId: string;
 
       if (isEditing && candidate) {
-        await updateMutation.mutateAsync(formattedData);
+        const updatedCandidate = await updateMutation.mutateAsync(formattedData);
+        candidateId = updatedCandidate.id;
         toast.success('Candidate updated successfully');
       } else {
-        await createMutation.mutateAsync(formattedData);
+        const newCandidate = await createMutation.mutateAsync(formattedData);
+        candidateId = newCandidate.id;
         toast.success('Candidate created successfully');
+      }
+      
+      // Upload resume if file is selected
+      if (resumeFile) {
+        try {
+          setIsUploading(true);
+          const result = await uploadResumeMutation.mutateAsync(resumeFile);
+          toast.success('Resume uploaded successfully');
+        } catch (uploadError) {
+          console.error('Error uploading resume:', uploadError);
+          toast.error('Failed to upload resume');
+        } finally {
+          setIsUploading(false);
+        }
       }
       
       router.push('/candidates');
@@ -329,14 +375,62 @@ export default function CandidateForm({ candidate, isEditing = false }: Candidat
                 name="resumeUrl"
                 render={({ field }) => (
                   <FormItem className="space-y-2">
-                    <FormLabel className="font-medium">Resume URL</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="https://example.com/resume.pdf" 
-                        {...field} 
-                        className="bg-background/50 border-border/50 focus-visible:ring-primary/70 transition-all"
-                      />
-                    </FormControl>
+                    <FormLabel className="font-medium">Resume</FormLabel>
+                    <div className="space-y-2">
+                      {/* File upload input */}
+                      <div className="flex flex-col space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={() => fileInputRef.current?.click()}
+                            className="border-border/50 bg-background/50 backdrop-blur-sm hover:bg-background/80 transition-all flex items-center gap-2"
+                          >
+                            <UploadIcon className="h-4 w-4" />
+                            Upload PDF
+                          </Button>
+                          {resumeFile && (
+                            <div className="flex items-center text-sm text-muted-foreground">
+                              <FileIcon className="h-4 w-4 mr-1 text-primary" />
+                              <span className="truncate max-w-[200px]">{resumeFile.name}</span>
+                              <CheckCircleIcon className="h-4 w-4 ml-1 text-green-500" />
+                            </div>
+                          )}
+                        </div>
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          accept="application/pdf"
+                          onChange={handleFileChange}
+                          className="hidden"
+                        />
+                        <FormDescription className="text-muted-foreground/80">
+                          Upload a PDF file (max 5MB)
+                        </FormDescription>
+                      </div>
+                      
+                      {/* Or divider */}
+                      <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t border-border/30" />
+                        </div>
+                        <div className="relative flex justify-center text-xs">
+                          <span className="bg-background px-2 text-muted-foreground">OR</span>
+                        </div>
+                      </div>
+                      
+                      {/* URL input */}
+                      <FormControl>
+                        <Input 
+                          placeholder="https://example.com/resume.pdf" 
+                          {...field} 
+                          className="bg-background/50 border-border/50 focus-visible:ring-primary/70 transition-all"
+                        />
+                      </FormControl>
+                      <FormDescription className="text-muted-foreground/80">
+                        Provide a URL to an existing resume
+                      </FormDescription>
+                    </div>
                     <FormMessage className="text-destructive/90" />
                   </FormItem>
                 )}

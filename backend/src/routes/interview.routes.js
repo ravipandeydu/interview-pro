@@ -11,6 +11,8 @@ import express from 'express';
 import { authenticate } from '../middlewares/auth.middleware.js';
 import { authorize } from '../middlewares/role.middleware.js';
 import * as interviewController from '../controllers/interview.controller.js';
+import * as collaborativeCodeController from '../controllers/collaborative-code.controller.js';
+import * as responseController from '../controllers/response.controller.js';
 import { sendSuccess } from '../utils/response.js';
 
 const router = express.Router();
@@ -468,5 +470,64 @@ router.get('/:id/result', authenticate, interviewController.getInterviewResult);
  *         $ref: '#/components/responses/ServerError'
  */
 router.get('/:id/pdf', authenticate, interviewController.generatePdfReport);
+
+/**
+ * @swagger
+ * /api/v1/interviews/{id}/code:
+ *   get:
+ *     summary: Get collaborative code for an interview
+ *     tags: [Interviews]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Interview ID
+ *     responses:
+ *       200:
+ *         description: Collaborative code retrieved successfully
+ *       404:
+ *         description: Interview not found
+ */
+router.get('/:id/code', authenticate, collaborativeCodeController.getCollaborativeCode);
+
+/**
+ * @swagger
+ * /api/v1/interviews/{id}/code:
+ *   post:
+ *     summary: Update collaborative code for an interview
+ *     tags: [Interviews]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Interview ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               code:
+ *                 type: string
+ *                 description: The code content
+ *               language:
+ *                 type: string
+ *                 description: The programming language
+ *     responses:
+ *       200:
+ *         description: Collaborative code updated successfully
+ *       404:
+ *         description: Interview not found
+ */
+router.post('/:id/code', authenticate, collaborativeCodeController.updateCollaborativeCode);
 
 export default router;

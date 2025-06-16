@@ -400,6 +400,8 @@ const RecruiterInterview = ({ interviewId }: RecruiterInterviewProps) => {
                       initialCode="// Write your code here..."
                       initialLanguage="javascript"
                       height="400px"
+                      fetchUpdates={true}
+                      fetchInterval={5000}
                     />
                   </div>
                 </TabsContent>
