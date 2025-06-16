@@ -11,13 +11,13 @@ const prisma = new PrismaClient();
 
 /**
  * Get collaborative code for an interview
- * @param {string} interviewId - Interview ID
+ * @param {string} id - Interview ID
  * @returns {Object} Collaborative code object
  */
-export const getCollaborativeCode = async (interviewId) => {
+export const getCollaborativeCode = async (id) => {
   // Check if interview exists
   const interview = await prisma.interview.findUnique({
-    where: { id: interviewId },
+    where: { id },
   });
 
   if (!interview) {
@@ -26,14 +26,14 @@ export const getCollaborativeCode = async (interviewId) => {
 
   // Get or create collaborative code
   let code = await prisma.collaborativeCode.findUnique({
-    where: { interviewId },
+    where: { interviewId: id },
   });
 
   // If code doesn't exist, create it
   if (!code) {
     code = await prisma.collaborativeCode.create({
       data: {
-        interviewId,
+        interviewId: id,
         code: '',
         language: 'javascript',
       },
@@ -42,7 +42,7 @@ export const getCollaborativeCode = async (interviewId) => {
 
   // Get active users (this would typically come from a real-time system)
   // For now, we'll just return the recruiter and candidate as active users
-  const activeUsers = await getActiveUsers(interviewId);
+  const activeUsers = await getActiveUsers(id);
 
   return {
     ...code,
@@ -52,14 +52,14 @@ export const getCollaborativeCode = async (interviewId) => {
 
 /**
  * Update collaborative code for an interview
- * @param {string} interviewId - Interview ID
+ * @param {string} id - Interview ID
  * @param {Object} codeData - Code data to update
  * @returns {Object} Updated collaborative code object
  */
-export const updateCollaborativeCode = async (interviewId, codeData) => {
+export const updateCollaborativeCode = async (id, codeData) => {
   // Check if interview exists
   const interview = await prisma.interview.findUnique({
-    where: { id: interviewId },
+    where: { id },
   });
 
   if (!interview) {
@@ -68,14 +68,14 @@ export const updateCollaborativeCode = async (interviewId, codeData) => {
 
   // Get or create collaborative code
   let code = await prisma.collaborativeCode.findUnique({
-    where: { interviewId },
+    where: { interviewId: id },
   });
 
   // If code doesn't exist, create it
   if (!code) {
     code = await prisma.collaborativeCode.create({
       data: {
-        interviewId,
+        interviewId: id,
         code: codeData.code || '',
         language: codeData.language || 'javascript',
       },
@@ -83,7 +83,7 @@ export const updateCollaborativeCode = async (interviewId, codeData) => {
   } else {
     // Update existing code
     code = await prisma.collaborativeCode.update({
-      where: { interviewId },
+      where: { interviewId: id },
       data: {
         code: codeData.code !== undefined ? codeData.code : code.code,
         language: codeData.language || code.language,
@@ -93,7 +93,7 @@ export const updateCollaborativeCode = async (interviewId, codeData) => {
   }
 
   // Get active users (this would typically come from a real-time system)
-  const activeUsers = await getActiveUsers(interviewId);
+  const activeUsers = await getActiveUsers(id);
 
   return {
     ...code,
@@ -106,12 +106,12 @@ export const updateCollaborativeCode = async (interviewId, codeData) => {
  * This is a placeholder function that would typically be replaced with
  * actual user presence tracking in a real-time system
  * 
- * @param {string} interviewId - Interview ID
+ * @param {string} id - Interview ID
  * @returns {Array} Array of active users
  */
-async function getActiveUsers(interviewId) {
+async function getActiveUsers(id) {
   const interview = await prisma.interview.findUnique({
-    where: { id: interviewId },
+    where: { id },
     include: {
       recruiter: {
         select: {

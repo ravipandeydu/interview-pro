@@ -477,8 +477,6 @@ router.get('/:id/pdf', authenticate, interviewController.generatePdfReport);
  *   get:
  *     summary: Get collaborative code for an interview
  *     tags: [Interviews]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -492,7 +490,7 @@ router.get('/:id/pdf', authenticate, interviewController.generatePdfReport);
  *       404:
  *         description: Interview not found
  */
-router.get('/:id/code', authenticate, collaborativeCodeController.getCollaborativeCode);
+router.get('/:id/code', collaborativeCodeController.getCollaborativeCode);
 
 /**
  * @swagger
@@ -500,8 +498,6 @@ router.get('/:id/code', authenticate, collaborativeCodeController.getCollaborati
  *   post:
  *     summary: Update collaborative code for an interview
  *     tags: [Interviews]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -528,6 +524,6 @@ router.get('/:id/code', authenticate, collaborativeCodeController.getCollaborati
  *       404:
  *         description: Interview not found
  */
-router.post('/:id/code', authenticate, collaborativeCodeController.updateCollaborativeCode);
+router.post('/:id/code', collaborativeCodeController.updateCollaborativeCode);
 
 export default router;

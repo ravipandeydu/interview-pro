@@ -15,9 +15,9 @@ import { sendSuccess } from '../utils/response.js';
 export const getCollaborativeCode = async (req, res, next) => {
   try {
     const { collaborativeCodeService } = req.container.cradle;
-    const { interviewId } = req.params;
+    const { id } = req.params;
     
-    const code = await collaborativeCodeService.getCollaborativeCode(interviewId);
+    const code = await collaborativeCodeService.getCollaborativeCode(id);
     sendSuccess(res, 200, 'Collaborative code retrieved successfully', code);
   } catch (error) {
     next(error);
@@ -33,10 +33,10 @@ export const getCollaborativeCode = async (req, res, next) => {
 export const updateCollaborativeCode = async (req, res, next) => {
   try {
     const { collaborativeCodeService } = req.container.cradle;
-    const { interviewId } = req.params;
+    const { id } = req.params;
     const { code, language } = req.body;
     
-    const updatedCode = await collaborativeCodeService.updateCollaborativeCode(interviewId, { code, language });
+    const updatedCode = await collaborativeCodeService.updateCollaborativeCode(id, { code, language });
     sendSuccess(res, 200, 'Collaborative code updated successfully', updatedCode);
   } catch (error) {
     next(error);
