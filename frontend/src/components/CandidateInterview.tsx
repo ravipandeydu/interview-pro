@@ -168,12 +168,14 @@ export const CandidateInterview = ({ token }: CandidateInterviewProps) => {
 
   // Submit a response for the current question
   const handleQuestionSubmit = async () => {
+    console.log('handleQuestionSubmit called');
     if (!interview) return;
 
     const currentQuestion = interview.questions[currentQuestionIndex];
     const isCoding = isCodingQuestion(currentQuestion);
 
     try {
+      console.log('Submitting response for question:', currentQuestion.id);
       await candidateAccessService.submitResponse(
         token,
         currentQuestion.id,
@@ -182,13 +184,17 @@ export const CandidateInterview = ({ token }: CandidateInterviewProps) => {
           ? selectedLanguage[currentQuestion.id] || "javascript"
           : undefined
       );
+      console.log('Response submitted successfully');
 
       if (currentQuestionIndex < interview.questions.length - 1) {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
+        console.log('Moving to next question, new index:', currentQuestionIndex + 1);
       } else {
         setConfirmDialogOpen(true);
+        console.log('Last question, opening confirmation dialog');
       }
     } catch (err: any) {
+      console.error('Error submitting response:', err);
       setError(err.response?.data?.message || "Failed to submit response");
     }
   };
@@ -556,10 +562,84 @@ export const CandidateInterview = ({ token }: CandidateInterviewProps) => {
                 <Tabs defaultValue="question">
                   <TabsList className="mb-4">
                     <TabsTrigger value="question">Question</TabsTrigger>
+                    <TabsTrigger value="collaborative">Collaborative Editor</TabsTrigger>
                     <TabsTrigger value="notes">Notes</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="question">
+                    <QuestionCard>
+                      <CardContent className="pt-6">
+                        <h3 className="text-lg font-medium mb-4">
+                          {currentQuestion.question.content}
+                        </h3>
+
+                        {isCodingQuestion(currentQuestion) ? (
+                          <div className="space-y-4">
+                            <div className="flex items-center space-x-4">
+                              <label className="text-sm font-medium">
+                                Programming Language:
+                              </label>
+                              <Select
+                                value={
+                                  selectedLanguage[currentQuestion.id] ||
+                                  "javascript"
+                                }
+                                onValueChange={(value) =>
+                                  handleLanguageChange(
+                                    currentQuestion.id,
+                                    value
+                                  )
+                                }
+                              >
+                                <SelectTrigger className="w-[180px]">
+                                  <SelectValue placeholder="Select language" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="javascript">
+                                    JavaScript
+                                  </SelectItem>
+                                  <SelectItem value="typescript">
+                                    TypeScript
+                                  </SelectItem>
+                                  <SelectItem value="python">Python</SelectItem>
+                                  <SelectItem value="java">Java</SelectItem>
+                                  <SelectItem value="csharp">C#</SelectItem>
+                                  <SelectItem value="cpp">C++</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <CodeEditor
+                              value={responses[currentQuestion.id] || ""}
+                              onChange={(value) =>
+                                handleResponseChange(currentQuestion.id, value)
+                              }
+                              language={
+                                selectedLanguage[currentQuestion.id] ||
+                                "javascript"
+                              }
+                              height="300px"
+                              isCandidate={true}
+                            />
+                          </div>
+                        ) : (
+                          <Textarea
+                            value={responses[currentQuestion.id] || ""}
+                            onChange={(e) =>
+                              handleResponseChange(
+                                currentQuestion.id,
+                                e.target.value
+                              )
+                            }
+                            placeholder="Type your answer here..."
+                            className="w-full min-h-[150px]"
+                          />
+                        )}
+                      </CardContent>
+                    </QuestionCard>
+                  </TabsContent>
+
+                  <TabsContent value="collaborative">
                     <QuestionCard>
                       <CardContent className="pt-6">
                         <h3 className="text-lg font-medium mb-4">
@@ -647,7 +727,7 @@ export const CandidateInterview = ({ token }: CandidateInterviewProps) => {
                   </TabsContent>
                 </Tabs>
               </CardContent>
-              <CardFooter className="flex justify-between">
+              <CardFooter className="flex justify-between relative z-20 bg-background/60 backdrop-blur-sm border-t border-indigo-500/10 py-4">
                 <Button
                   variant="outline"
                   onClick={() =>
@@ -664,7 +744,11 @@ export const CandidateInterview = ({ token }: CandidateInterviewProps) => {
 
                 {currentQuestionIndex < interview.questions.length - 1 ? (
                   <Button
-                    onClick={handleQuestionSubmit}
+                    onClick={(e) => {
+                      console.log('Next button clicked');
+                      e.preventDefault();
+                      handleQuestionSubmit();
+                    }}
                     className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md"
                   >
                     Next
@@ -672,7 +756,9 @@ export const CandidateInterview = ({ token }: CandidateInterviewProps) => {
                   </Button>
                 ) : (
                   <Button
-                    onClick={async () => {
+                    onClick={async (e) => {
+                      console.log('Complete Interview button clicked');
+                      e.preventDefault();
                       await handleQuestionSubmit();
                       setConfirmDialogOpen(true);
                     }}

@@ -69,10 +69,10 @@ export function Header() {
                       Questions
                     </Link>
                     <Link
-                      href="/history"
+                      href="/candidates"
                       className="transition-colors hover:text-indigo-600 dark:hover:text-indigo-400 text-foreground/80"
                     >
-                      Interview History
+                      Candidates
                     </Link>
                   </>
                 ) : (
@@ -124,9 +124,9 @@ export function Header() {
           {enableAuth && isAuthenticated && (
             <>
               <NotificationDropdown />
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 asChild
                 className="rounded-full hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400"
               >
@@ -135,9 +135,9 @@ export function Header() {
                   <span className="sr-only">Settings</span>
                 </Link>
               </Button>
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 asChild
                 className="rounded-full hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400"
               >

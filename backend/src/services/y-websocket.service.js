@@ -10,6 +10,11 @@ import * as Y from 'yjs';
 import logger from '../utils/logger.js';
 import config from '../config/index.js';
 import jwt from 'jsonwebtoken';
+import candidateAccessService from './candidate-access.service.js';
+import { PrismaClient } from '@prisma/client';
+
+// Initialize Prisma client
+const prisma = new PrismaClient();
 
 // Map to store active Y.js documents
 const documents = new Map();
@@ -72,7 +77,7 @@ function initializeYjsWebSocketServer(httpServer) {
     }
     
     // Store connection information
-    const userId = ws.user.id;
+    const userId = ws.user.id || ws.user.interviewId; // Support both regular users and candidates
     if (!connections.has(userId)) {
       connections.set(userId, new Set());
     }
@@ -119,18 +124,39 @@ function initializeYjsWebSocketServer(httpServer) {
 }
 
 /**
- * Authenticate a WebSocket connection using JWT
- * @param {string} token - JWT token
+ * Authenticate a WebSocket connection using JWT or candidate access token
+ * @param {string} token - JWT token or candidate access token
  * @param {Function} callback - Callback function
  */
-function authenticateConnection(token, callback) {
+async function authenticateConnection(token, callback) {
   if (!token) {
     return callback(new Error('Authentication token not provided'));
   }
   
   try {
-    const decoded = jwt.verify(token, config.jwtSecret);
-    callback(null, decoded);
+    // First try JWT authentication
+    try {
+      const decoded = jwt.verify(token, config.jwtSecret);
+      return callback(null, decoded);
+    } catch (jwtError) {
+      // If JWT authentication fails, try candidate access token
+      try {
+        const interview = await candidateAccessService.validateAccessToken(prisma, token);
+        if (interview) {
+          // Create a user-like object for the candidate
+          return callback(null, {
+            id: `candidate-${interview.id}`,
+            role: 'CANDIDATE',
+            interviewId: interview.id
+          });
+        } else {
+          throw new Error('Invalid candidate access token');
+        }
+      } catch (candidateError) {
+        // Both authentication methods failed
+        throw new Error('Authentication failed');
+      }
+    }
   } catch (error) {
     callback(error);
   }

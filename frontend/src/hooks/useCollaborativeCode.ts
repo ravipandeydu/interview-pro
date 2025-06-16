@@ -123,9 +123,20 @@ export function useCollaborativeCode({
   // Initialize Y.js WebSocket provider and connect to socket
   useEffect(() => {
     let autoSaveTimer: NodeJS.Timeout | null = null;
+    let retryCount = 0;
+    const maxRetries = 3; // Limit retries to prevent infinite loops
     
     const connectToCodeRoom = async () => {
       try {
+        // If we've already retried too many times, don't try again
+        if (retryCount >= maxRetries) {
+          console.warn(`Failed to connect after ${maxRetries} attempts, giving up`);
+          setIsLoading(false);
+          setError(`Failed to connect after ${maxRetries} attempts. Please try again later.`);
+          return;
+        }
+        
+        retryCount++;
         setIsLoading(true);
         setError(null);
         
@@ -143,27 +154,53 @@ export function useCollaborativeCode({
         socketService.on('interview:userLeft', handleUserLeft);
         
         // Initialize Y.js WebSocket provider if user is available
-        if (user) {
+        if (user || interviewId) { // Modified to allow candidate access with interviewId
           // Create WebSocket provider
-          const wsProvider = new WebsocketProvider(
-            `ws://${window.location.hostname}:${window.location.port || 3000}`,
-            `code-${interviewId}`,
-            ydoc.current,
-            { 
-              connect: true,
-              params: { token: tokenManager.getToken() } // Send auth token
-            }
-          );
+          // Connect directly to the backend WebSocket server
+          // The backend server is running on port 8080 and expects paths starting with /yjs
+          const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+          const backendHost = new URL(backendUrl).hostname;
+          const backendPort = new URL(backendUrl).port || '8080';
+          // Add token as a query parameter as expected by the backend
+          const token = user ? tokenManager.getToken() : interviewId;
+          const wsUrl = `ws://${backendHost}:${backendPort}/yjs?token=${encodeURIComponent(token)}`;
+          console.log('Connecting to WebSocket URL:', wsUrl);
+          const roomName = `code-${interviewId}`;
           
-          provider.current = wsProvider;
+          try {
+            console.log(`Attempting to connect to WebSocket at ${wsUrl} for room ${roomName}`);
+            const wsProvider = new WebsocketProvider(
+              wsUrl,
+              roomName,
+              ydoc.current,
+              { 
+                connect: true
+                // Token is now sent as a query parameter in the URL
+              }
+            );
+            
+            // Add error event listener to the provider
+            wsProvider.on('connection-error', (error) => {
+              console.error('WebSocket connection error:', error);
+              setError('WebSocket connection error');
+              setIsLoading(false);
+            });
+            
+            provider.current = wsProvider;
+          } catch (wsError) {
+            console.error('Failed to initialize WebSocket provider:', wsError);
+            setError('Failed to initialize collaborative editing');
+            setIsLoading(false);
+            return; // Exit early to prevent further processing
+          }
           
           // Set user awareness
           if (wsProvider && wsProvider.awareness) {
             wsProvider.awareness.setLocalStateField('user', {
-              name: user.name,
+              name: user?.name || 'Candidate',
               color: '#' + Math.floor(Math.random() * 16777215).toString(16),
-              id: user.id,
-              role: user.role,
+              id: user?.id || 'candidate',
+              role: user?.role || 'CANDIDATE',
             });
           }
           

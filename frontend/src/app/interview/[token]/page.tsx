@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useEffect, use  } from 'react';
-import { useRouter } from 'next/navigation';
-import { CandidateInterview } from '@/pages/CandidateInterview';
+import { useEffect, use } from "react";
+import { useRouter } from "next/navigation";
+import { CandidateInterview } from "@/components/CandidateInterview";
 
 // interface InterviewPageProps {
 //   params: {
@@ -10,16 +10,16 @@ import { CandidateInterview } from '@/pages/CandidateInterview';
 //   };
 // }
 
-type Params = Promise<{ token: string }>
+type Params = Promise<{ token: string }>;
 
-export default function InterviewPage({ params }: {params: Params}) {
+export default function InterviewPage({ params }: { params: Params }) {
   const { token } = use(params);
   const router = useRouter();
 
   // Validate token format to prevent unnecessary API calls
   useEffect(() => {
-    if (!token || typeof token !== 'string' || token.length < 10) {
-      router.push('/'); // Redirect to home if token is invalid
+    if (!token || typeof token !== "string" || token.length < 10) {
+      router.push("/"); // Redirect to home if token is invalid
     }
   }, [token, router]);
 
