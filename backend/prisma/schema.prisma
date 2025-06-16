@@ -117,6 +117,7 @@ model Interview {
   questions         InterviewQuestion[]
   responses         Response[]
   notes             Note[]    // Notes associated with this interview
+  collaborativeCode CollaborativeCode? // Collaborative code for this interview
   
   @@map("interviews")
 }
@@ -240,4 +241,19 @@ model NoteEdit {
   user              User      @relation(fields: [userId], references: [id])
   
   @@map("note_edits")
+}
+
+// CollaborativeCode model for storing code shared during interviews
+model CollaborativeCode {
+  id                String    @id @default(uuid())
+  code              String    @default("") // The code content
+  language          String    @default("javascript") // The programming language
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relationships
+  interviewId       String    @unique // One-to-one relationship with Interview
+  interview         Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  
+  @@map("collaborative_code")
 }

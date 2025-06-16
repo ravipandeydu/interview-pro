@@ -691,6 +691,8 @@ export const CandidateInterview = ({ token }: CandidateInterviewProps) => {
                               }
                               height="300px"
                               isCandidate={true}
+                              fetchUpdates={true}
+                              fetchInterval={5000}
                               onCodeChange={(value) =>
                                 handleResponseChange(currentQuestion.id, value)
                               }

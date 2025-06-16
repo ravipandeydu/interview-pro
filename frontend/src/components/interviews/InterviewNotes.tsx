@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { CollaborativeNoteEditor } from '@/components/CollaborativeNoteEditor';
+import { SimpleNoteEditor } from '@/components/SimpleNoteEditor';
 import { toast } from 'sonner';
 import { Clock, FileText, History } from 'lucide-react';
 import { format } from 'date-fns';
@@ -340,7 +340,7 @@ export function InterviewNotes({ interviewId, accessToken }: { interviewId: stri
                 </div>
               ) : selectedNote ? (
                 <div className="backdrop-blur-sm bg-background/60 rounded-lg border border-indigo-500/10 p-4">
-                  <CollaborativeNoteEditor
+                  <SimpleNoteEditor
                     key={selectedNote.id} // Add a key prop to force re-render when the note changes
                     noteId={selectedNote.id}
                     initialTitle={selectedNote.title}
