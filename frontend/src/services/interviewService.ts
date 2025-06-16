@@ -380,6 +380,9 @@ export class InterviewService {
       source: string;
       similarity: number;
       matchedText: string;
+      sourceType: string;
+      candidateId?: string;
+      interviewId?: string;
     }[];
   }> {
     try {
@@ -402,6 +405,9 @@ export class InterviewService {
       source: string;
       similarity: number;
       matchedText: string;
+      sourceType: string;
+      candidateId?: string;
+      interviewId?: string;
     }[];
   }> {
     try {

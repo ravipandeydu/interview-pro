@@ -14,6 +14,8 @@ export interface PlagiarismSource {
   url?: string;
   submissionId?: string;
   candidateName?: string;
+  interviewTitle?: string;
+  sourceType?: 'internal' | 'external';
 }
 
 export interface PlagiarismReport {
@@ -173,9 +175,16 @@ export const PlagiarismReportUI: React.FC<PlagiarismReportUIProps> = ({
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex items-center">
                       <FileCode className="h-4 w-4 text-purple-500 mr-2" />
-                      <span className="font-medium">
-                        {source.candidateName || 'Another Candidate'}
-                      </span>
+                      <div className="flex flex-col">
+                        <span className="font-medium">
+                          {source.candidateName || 'Another Candidate'}
+                        </span>
+                        {source.interviewTitle && (
+                          <span className="text-xs text-muted-foreground">
+                            Interview: {source.interviewTitle}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className={`px-2 py-1 rounded text-xs font-medium ${getScoreColor(source.similarity)}`}>
                       {source.similarity}% match
