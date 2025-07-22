@@ -11,7 +11,7 @@ This guide will help you set up Resend email service for your Node.js + Next.js 
 
 1. Go to [resend.com](https://resend.com) and sign up for an account
 2. Verify your email address
-3. Complete the onboarding proces
+3. Complete the onboarding process
 
 ## Step 2: Get Your API Key
 
